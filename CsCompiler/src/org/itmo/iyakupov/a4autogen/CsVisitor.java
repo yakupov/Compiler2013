@@ -1,9 +1,5 @@
 // Generated from C:\Users\Ilia\Desktop\Cs.g4 by ANTLR 4.1
-package org.itmo.iyakupov;
-
-    import java.util.Set;
-    import java.util.HashSet;
-
+package org.itmo.iyakupov.a4autogen;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -56,6 +52,13 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitCompound_statement(@NotNull CsParser.Compound_statementContext ctx);
+
+	/**
+	 * Visit a parse tree produced by {@link CsParser#clsName}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitClsName(@NotNull CsParser.ClsNameContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link CsParser#cast_expression}.
@@ -121,25 +124,11 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	T visitInit_declarator(@NotNull CsParser.Init_declaratorContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link CsParser#other_modifiers}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitOther_modifiers(@NotNull CsParser.Other_modifiersContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link CsParser#identifier_list}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitIdentifier_list(@NotNull CsParser.Identifier_listContext ctx);
-
-	/**
-	 * Visit a parse tree produced by {@link CsParser#type_qualifier}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitType_qualifier(@NotNull CsParser.Type_qualifierContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link CsParser#enumerator_list}.
@@ -184,13 +173,6 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	T visitAdditive_expression(@NotNull CsParser.Additive_expressionContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link CsParser#unary_operator}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitUnary_operator(@NotNull CsParser.Unary_operatorContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link CsParser#lvalue}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -226,13 +208,6 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	T visitType_name(@NotNull CsParser.Type_nameContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link CsParser#pointer}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitPointer(@NotNull CsParser.PointerContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link CsParser#parameter_list}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -259,13 +234,6 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitParameter_type_list(@NotNull CsParser.Parameter_type_listContext ctx);
-
-	/**
-	 * Visit a parse tree produced by {@link CsParser#access_modifier}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAccess_modifier(@NotNull CsParser.Access_modifierContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link CsParser#constant_expression}.
@@ -394,18 +362,18 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	T visitConditional_expression(@NotNull CsParser.Conditional_expressionContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link CsParser#and_expression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAnd_expression(@NotNull CsParser.And_expressionContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link CsParser#primary_expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitPrimary_expression(@NotNull CsParser.Primary_expressionContext ctx);
+
+	/**
+	 * Visit a parse tree produced by {@link CsParser#and_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAnd_expression(@NotNull CsParser.And_expressionContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link CsParser#type_specifier}.

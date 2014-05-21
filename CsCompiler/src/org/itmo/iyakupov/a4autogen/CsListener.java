@@ -1,9 +1,5 @@
 // Generated from C:\Users\Ilia\Desktop\Cs.g4 by ANTLR 4.1
-package org.itmo.iyakupov;
-
-    import java.util.Set;
-    import java.util.HashSet;
-
+package org.itmo.iyakupov.a4autogen;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -77,6 +73,17 @@ public interface CsListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitCompound_statement(@NotNull CsParser.Compound_statementContext ctx);
+
+	/**
+	 * Enter a parse tree produced by {@link CsParser#clsName}.
+	 * @param ctx the parse tree
+	 */
+	void enterClsName(@NotNull CsParser.ClsNameContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CsParser#clsName}.
+	 * @param ctx the parse tree
+	 */
+	void exitClsName(@NotNull CsParser.ClsNameContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link CsParser#cast_expression}.
@@ -178,17 +185,6 @@ public interface CsListener extends ParseTreeListener {
 	void exitInit_declarator(@NotNull CsParser.Init_declaratorContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link CsParser#other_modifiers}.
-	 * @param ctx the parse tree
-	 */
-	void enterOther_modifiers(@NotNull CsParser.Other_modifiersContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#other_modifiers}.
-	 * @param ctx the parse tree
-	 */
-	void exitOther_modifiers(@NotNull CsParser.Other_modifiersContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link CsParser#identifier_list}.
 	 * @param ctx the parse tree
 	 */
@@ -198,17 +194,6 @@ public interface CsListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitIdentifier_list(@NotNull CsParser.Identifier_listContext ctx);
-
-	/**
-	 * Enter a parse tree produced by {@link CsParser#type_qualifier}.
-	 * @param ctx the parse tree
-	 */
-	void enterType_qualifier(@NotNull CsParser.Type_qualifierContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#type_qualifier}.
-	 * @param ctx the parse tree
-	 */
-	void exitType_qualifier(@NotNull CsParser.Type_qualifierContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link CsParser#enumerator_list}.
@@ -277,17 +262,6 @@ public interface CsListener extends ParseTreeListener {
 	void exitAdditive_expression(@NotNull CsParser.Additive_expressionContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link CsParser#unary_operator}.
-	 * @param ctx the parse tree
-	 */
-	void enterUnary_operator(@NotNull CsParser.Unary_operatorContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#unary_operator}.
-	 * @param ctx the parse tree
-	 */
-	void exitUnary_operator(@NotNull CsParser.Unary_operatorContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link CsParser#lvalue}.
 	 * @param ctx the parse tree
 	 */
@@ -343,17 +317,6 @@ public interface CsListener extends ParseTreeListener {
 	void exitType_name(@NotNull CsParser.Type_nameContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link CsParser#pointer}.
-	 * @param ctx the parse tree
-	 */
-	void enterPointer(@NotNull CsParser.PointerContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#pointer}.
-	 * @param ctx the parse tree
-	 */
-	void exitPointer(@NotNull CsParser.PointerContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link CsParser#parameter_list}.
 	 * @param ctx the parse tree
 	 */
@@ -396,17 +359,6 @@ public interface CsListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitParameter_type_list(@NotNull CsParser.Parameter_type_listContext ctx);
-
-	/**
-	 * Enter a parse tree produced by {@link CsParser#access_modifier}.
-	 * @param ctx the parse tree
-	 */
-	void enterAccess_modifier(@NotNull CsParser.Access_modifierContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#access_modifier}.
-	 * @param ctx the parse tree
-	 */
-	void exitAccess_modifier(@NotNull CsParser.Access_modifierContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link CsParser#constant_expression}.
@@ -607,17 +559,6 @@ public interface CsListener extends ParseTreeListener {
 	void exitConditional_expression(@NotNull CsParser.Conditional_expressionContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link CsParser#and_expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterAnd_expression(@NotNull CsParser.And_expressionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#and_expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitAnd_expression(@NotNull CsParser.And_expressionContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link CsParser#primary_expression}.
 	 * @param ctx the parse tree
 	 */
@@ -627,6 +568,17 @@ public interface CsListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPrimary_expression(@NotNull CsParser.Primary_expressionContext ctx);
+
+	/**
+	 * Enter a parse tree produced by {@link CsParser#and_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterAnd_expression(@NotNull CsParser.And_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CsParser#and_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitAnd_expression(@NotNull CsParser.And_expressionContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link CsParser#type_specifier}.

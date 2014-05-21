@@ -1,9 +1,5 @@
 // Generated from C:\Users\Ilia\Desktop\Cs.g4 by ANTLR 4.1
-package org.itmo.iyakupov;
-
-    import java.util.Set;
-    import java.util.HashSet;
-
+package org.itmo.iyakupov.a4autogen;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.NotNull;
@@ -93,6 +89,19 @@ public class CsBaseListener implements CsListener {
 	 * The default implementation does nothing.
 	 */
 	@Override public void exitCompound_statement(@NotNull CsParser.Compound_statementContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * The default implementation does nothing.
+	 */
+	@Override public void enterClsName(@NotNull CsParser.ClsNameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * The default implementation does nothing.
+	 */
+	@Override public void exitClsName(@NotNull CsParser.ClsNameContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
@@ -216,19 +225,6 @@ public class CsBaseListener implements CsListener {
 	 * <p/>
 	 * The default implementation does nothing.
 	 */
-	@Override public void enterOther_modifiers(@NotNull CsParser.Other_modifiersContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitOther_modifiers(@NotNull CsParser.Other_modifiersContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
 	@Override public void enterIdentifier_list(@NotNull CsParser.Identifier_listContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -236,19 +232,6 @@ public class CsBaseListener implements CsListener {
 	 * The default implementation does nothing.
 	 */
 	@Override public void exitIdentifier_list(@NotNull CsParser.Identifier_listContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void enterType_qualifier(@NotNull CsParser.Type_qualifierContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitType_qualifier(@NotNull CsParser.Type_qualifierContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
@@ -333,19 +316,6 @@ public class CsBaseListener implements CsListener {
 	 * <p/>
 	 * The default implementation does nothing.
 	 */
-	@Override public void enterUnary_operator(@NotNull CsParser.Unary_operatorContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitUnary_operator(@NotNull CsParser.Unary_operatorContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
 	@Override public void enterLvalue(@NotNull CsParser.LvalueContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -411,19 +381,6 @@ public class CsBaseListener implements CsListener {
 	 * <p/>
 	 * The default implementation does nothing.
 	 */
-	@Override public void enterPointer(@NotNull CsParser.PointerContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitPointer(@NotNull CsParser.PointerContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
 	@Override public void enterParameter_list(@NotNull CsParser.Parameter_listContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -470,19 +427,6 @@ public class CsBaseListener implements CsListener {
 	 * The default implementation does nothing.
 	 */
 	@Override public void exitParameter_type_list(@NotNull CsParser.Parameter_type_listContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void enterAccess_modifier(@NotNull CsParser.Access_modifierContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitAccess_modifier(@NotNull CsParser.Access_modifierContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
@@ -723,19 +667,6 @@ public class CsBaseListener implements CsListener {
 	 * <p/>
 	 * The default implementation does nothing.
 	 */
-	@Override public void enterAnd_expression(@NotNull CsParser.And_expressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitAnd_expression(@NotNull CsParser.And_expressionContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
 	@Override public void enterPrimary_expression(@NotNull CsParser.Primary_expressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -743,6 +674,19 @@ public class CsBaseListener implements CsListener {
 	 * The default implementation does nothing.
 	 */
 	@Override public void exitPrimary_expression(@NotNull CsParser.Primary_expressionContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * The default implementation does nothing.
+	 */
+	@Override public void enterAnd_expression(@NotNull CsParser.And_expressionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * The default implementation does nothing.
+	 */
+	@Override public void exitAnd_expression(@NotNull CsParser.And_expressionContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

@@ -1,9 +1,5 @@
 // Generated from C:\Users\Ilia\Desktop\Cs.g4 by ANTLR 4.1
-package org.itmo.iyakupov;
-
-    import java.util.Set;
-    import java.util.HashSet;
-
+package org.itmo.iyakupov.a4autogen;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -63,6 +59,14 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
 	@Override public T visitCompound_statement(@NotNull CsParser.Compound_statementContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 * <p/>
+	 * The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.
+	 */
+	@Override public T visitClsName(@NotNull CsParser.ClsNameContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
@@ -142,23 +146,7 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
-	@Override public T visitOther_modifiers(@NotNull CsParser.Other_modifiersContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.
-	 */
 	@Override public T visitIdentifier_list(@NotNull CsParser.Identifier_listContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.
-	 */
-	@Override public T visitType_qualifier(@NotNull CsParser.Type_qualifierContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
@@ -214,14 +202,6 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
-	@Override public T visitUnary_operator(@NotNull CsParser.Unary_operatorContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.
-	 */
 	@Override public T visitLvalue(@NotNull CsParser.LvalueContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -262,14 +242,6 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
-	@Override public T visitPointer(@NotNull CsParser.PointerContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.
-	 */
 	@Override public T visitParameter_list(@NotNull CsParser.Parameter_listContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -295,14 +267,6 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
 	@Override public T visitParameter_type_list(@NotNull CsParser.Parameter_type_listContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.
-	 */
-	@Override public T visitAccess_modifier(@NotNull CsParser.Access_modifierContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
@@ -454,7 +418,7 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
-	@Override public T visitAnd_expression(@NotNull CsParser.And_expressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitPrimary_expression(@NotNull CsParser.Primary_expressionContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
@@ -462,7 +426,7 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
-	@Override public T visitPrimary_expression(@NotNull CsParser.Primary_expressionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAnd_expression(@NotNull CsParser.And_expressionContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
