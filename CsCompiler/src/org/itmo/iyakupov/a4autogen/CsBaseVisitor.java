@@ -66,14 +66,6 @@ public class CsBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements CsV
 	 * The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.
 	 */
-	@Override public T visitClsName(@NotNull CsParser.ClsNameContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.
-	 */
 	@Override public T visitCast_expression(@NotNull CsParser.Cast_expressionContext ctx) { return visitChildren(ctx); }
 
 	/**

@@ -3,18 +3,15 @@ grammar Cs;
 //tokens {CLASS}
 
 cls_def
-    : ACCESS_MODIFIER CLASS clsName OPB_FIG (cls_field | cls_method | cls_def | enum_specifier)* CLB_FIG
+    : ACCESS_MODIFIER? OTHER_MODIFIER* CLASS IDENTIFIER OPB_FIG (cls_field | cls_method | cls_def | enum_specifier)* CLB_FIG
     ;
-
-clsName: IDENTIFIER;
-
 
 cls_field
     : (ACCESS_MODIFIER? OTHER_MODIFIER*) type_specifier IDENTIFIER (ASSIGN initializer)? SEMICOLON //TODO... unneeded!
     ;
 
 cls_method
-    : (ACCESS_MODIFIER? OTHER_MODIFIER*) type_specifier IDENTIFIER argument_expression_list OPB_FIG (statement)* CLB_FIG SEMICOLON //TODO
+    : (ACCESS_MODIFIER? OTHER_MODIFIER*) type_specifier IDENTIFIER OPB_RND argument_expression_list? CLB_RND OPB_FIG (statement)* CLB_FIG
     ;
 
 //TODO: think
@@ -291,6 +288,88 @@ jump_statement
 	| RETURN expression SEMICOLON
 	;
 
+
+
+CLASS : 'class';
+ENUM : 'enum';
+CASE : 'case';
+DEFAULT: 'default';
+IF: 'if';
+ELSE: 'else';
+SWITCH: 'switch';
+FOR: 'for';
+WHILE: 'while';
+DO: 'do';
+CONTINUE: 'continue';
+BREAK: 'break';
+RETURN: 'return';
+
+PRIMITIVE_TYPE	: 'void' | 'char' | 'short' | 'int' | 'long' | 'float' | 'double';
+
+PRIMITIVE_TYPE_MODIFIER	: 'unsigned' | 'signed';
+    
+TYPE_QUALIFIER : 'const' | 'volatile';
+
+ACCESS_MODIFIER : 'private' | 'protected' | 'public' | 'internal';
+
+OTHER_MODIFIER : 'static' | 'const' | 'abstract';
+
+ASSIGN: '=';
+
+ASSIGN_AND_MODIFY_OPERATOR
+	: '*='
+	| '/='
+	| '%='
+	| '+='
+	| '-='
+	| '<<='
+	| '>>='
+	| '&='
+	| '^='
+	| '|='
+	;
+
+UNARY_OPERATOR
+	: '&'
+	| MUL
+	| PLUS
+	| MINUS
+	| '~'
+	| '!'
+	;
+
+EQUALITY_OPERATOR: ('=='|'!=');
+
+COMPARSION_OPERATOR: ('<'|'>'|'<='|'>=');
+
+SHIFT_OPERATOR: ('<<'|'>>');
+
+INCREMENT: '++';
+DECREMENT: '--';
+
+OPB_FIG: '{';
+CLB_FIG: '}';
+OPB_RND: '(';
+CLB_RND: ')';
+OPB_SQ: '[';
+CLB_SQ: ']';
+SEMICOLON: ';';
+DOUBLE_DOT: ':';
+COMMA: ',';
+DOT: '.';
+ETC: '...';
+PLUS: '+';
+MINUS: '-';
+MUL: '*';
+DIV: '/';
+BIT_AND: '&';
+BIT_OR: '|';
+BIT_XOR: '^';
+AND: '&&';
+OR: '||';
+QUESTION: '?';
+PERCENT: '%';
+
 IDENTIFIER
 	:	LETTER (LETTER|'0'..'9')*
 	;
@@ -372,86 +451,3 @@ LINE_COMMENT
 LINE_COMMAND 
     : ('#' ~('\n'|'\r')* '\r'? '\n') -> skip
     ;
-
-CLASS : 'class';
-ENUM : 'enum';
-CASE : 'case';
-DEFAULT: 'default';
-IF: 'if';
-ELSE: 'else';
-SWITCH: 'switch';
-FOR: 'for';
-WHILE: 'while';
-DO: 'do';
-CONTINUE: 'continue';
-BREAK: 'break';
-RETURN: 'return';
-
-PRIMITIVE_TYPE	: ('void' | 'char' | 'short' | 'int' | 'long' | 'float' | 'double');
-
-PRIMITIVE_TYPE_MODIFIER	: ('unsigned' | 'signed');
-    
-TYPE_QUALIFIER
-	: 'const'
-	| 'volatile'
-	;
-
-ACCESS_MODIFIER : 'private' | 'protected' | 'public' | 'internal';
-
-OTHER_MODIFIER : ('static'|'const'|'abstract');
-
-ASSIGN: '=';
-
-ASSIGN_AND_MODIFY_OPERATOR
-	: '*='
-	| '/='
-	| '%='
-	| '+='
-	| '-='
-	| '<<='
-	| '>>='
-	| '&='
-	| '^='
-	| '|='
-	;
-
-UNARY_OPERATOR
-	: '&'
-	| MUL
-	| PLUS
-	| MINUS
-	| '~'
-	| '!'
-	;
-
-EQUALITY_OPERATOR: ('=='|'!=');
-
-COMPARSION_OPERATOR: ('<'|'>'|'<='|'>=');
-
-SHIFT_OPERATOR: ('<<'|'>>');
-
-INCREMENT: '++';
-DECREMENT: '--';
-
-OPB_FIG: '{';
-CLB_FIG: '}';
-OPB_RND: '(';
-CLB_RND: ')';
-OPB_SQ: '[';
-CLB_SQ: ']';
-SEMICOLON: ';';
-DOUBLE_DOT: ':';
-COMMA: ',';
-DOT: '.';
-ETC: '...';
-PLUS: '+';
-MINUS: '-';
-MUL: '*';
-DIV: '/';
-BIT_AND: '&';
-BIT_OR: '|';
-BIT_XOR: '^';
-AND: '&&';
-OR: '||';
-QUESTION: '?';
-PERCENT: '%';

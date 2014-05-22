@@ -95,19 +95,6 @@ public class CsBaseListener implements CsListener {
 	 * <p/>
 	 * The default implementation does nothing.
 	 */
-	@Override public void enterClsName(@NotNull CsParser.ClsNameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitClsName(@NotNull CsParser.ClsNameContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
 	@Override public void enterCast_expression(@NotNull CsParser.Cast_expressionContext ctx) { }
 	/**
 	 * {@inheritDoc}

@@ -54,13 +54,6 @@ public interface CsVisitor<T> extends ParseTreeVisitor<T> {
 	T visitCompound_statement(@NotNull CsParser.Compound_statementContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link CsParser#clsName}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitClsName(@NotNull CsParser.ClsNameContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link CsParser#cast_expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

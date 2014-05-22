@@ -5,13 +5,14 @@ import java.io.FileInputStream;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.Trees;
 import org.itmo.iyakupov.a4autogen.CsBaseVisitor;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.a4autogen.CsParser;
 
 public class CsCompiler {
 	public static void main(String[] args) {
-		args = new String[]{"Test.cs"};
+		args = new String[]{"Test.cs", "AST.ps"};
 		
 		assert(args.length > 0 && args[0] != null);
 		String argCompilationUnit = args[0];
@@ -29,6 +30,10 @@ public class CsCompiler {
 			} else {
 				System.out.println(String.format("Parse of %s completed successfully", argCompilationUnit));
 			}
+			
+			System.out.println(tree.toStringTree());
+			if (args.length > 1)
+				Trees.writePS(tree, null, args[1]);
 			
 			CsBaseVisitor visitor = new CsBaseVisitor();
 			visitor.visit(tree);

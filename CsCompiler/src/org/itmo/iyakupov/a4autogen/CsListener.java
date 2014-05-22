@@ -75,17 +75,6 @@ public interface CsListener extends ParseTreeListener {
 	void exitCompound_statement(@NotNull CsParser.Compound_statementContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link CsParser#clsName}.
-	 * @param ctx the parse tree
-	 */
-	void enterClsName(@NotNull CsParser.ClsNameContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#clsName}.
-	 * @param ctx the parse tree
-	 */
-	void exitClsName(@NotNull CsParser.ClsNameContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link CsParser#cast_expression}.
 	 * @param ctx the parse tree
 	 */
