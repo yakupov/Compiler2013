@@ -1,9 +1,13 @@
 package org.itmo.iyakupov;
 
 import java.io.FileInputStream;
+import java.util.Arrays;
+import java.util.Collections;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.Trees;
 import org.itmo.iyakupov.a4autogen.CsBaseVisitor;
@@ -21,8 +25,9 @@ public class CsCompiler {
 			ANTLRInputStream input = new ANTLRInputStream(new FileInputStream(argCompilationUnit));
 			CsLexer lexer = new CsLexer(input);
 			CsParser parser = new CsParser(new CommonTokenStream(lexer));
-			ParseTree tree = parser.cls_def();
-
+			//ParseTree tree = parser.cls_def();
+			ParserRuleContext tree = parser.cls_def();
+			
 			int syntaxErrorsCount = parser.getNumberOfSyntaxErrors();
 			if (syntaxErrorsCount > 0) {
 				System.err.println(String.format("Parse of %s failed: %d errors found", argCompilationUnit, syntaxErrorsCount));
@@ -33,13 +38,32 @@ public class CsCompiler {
 			
 			System.out.println(tree.toStringTree());
 			if (args.length > 1)
-				Trees.writePS(tree, null, args[1]);
+				Trees.writePS(tree, Arrays.asList(parser.getRuleNames()), args[1], "courier", 1);
 			
-			CsBaseVisitor visitor = new CsBaseVisitor();
-			visitor.visit(tree);
+			//CsBaseVisitor visitor = new CsBaseVisitor();
+			//visitor.visit(tree);
+			testTree(tree, 0, parser);
+			
+			System.out.println(parser.getRuleIndexMap());
+			System.out.println(parser.getTokenTypeMap());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+		
+
+	}
+	
+	public static void testTree(ParserRuleContext tree, int level, Parser p) {
+		assert (level == tree.depth());
+		System.err.println(level + "; " + p.getRuleNames()[tree.getRuleIndex()] + "; " + tree.getText());
+		System.err.println("\t " + tree.toInfoString(p));
+
+		//System.err.println("\t " + tree.getTokens(CsLexer.CLASS).size());
+		//System.err.println("\t " + tree.getTokens(CsLexer.ACCESS_MODIFIER).size());
+		//System.err.println("\t " + tree.getTokens(CsLexer.IDENTIFIER).size());
+			
+		for (ParserRuleContext ct : tree.getRuleContexts(ParserRuleContext.class))
+			testTree(ct, level + 1, p);
 	}
 }
