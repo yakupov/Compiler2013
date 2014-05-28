@@ -1,42 +1,21 @@
 grammar Cs;
 
-//tokens {CLASS}
-
 cls_def
-    : ACCESS_MODIFIER? OTHER_MODIFIER* CLASS IDENTIFIER OPB_FIG (cls_field | cls_method | cls_def | enum_specifier)* CLB_FIG
-    ;
-
-cls_field
-    : (ACCESS_MODIFIER? OTHER_MODIFIER*) type_specifier IDENTIFIER (ASSIGN initializer)? SEMICOLON //TODO... unneeded!
+    : ACCESS_MODIFIER? OTHER_MODIFIER* CLASS IDENTIFIER OPB_FIG (cls_method | cls_def | enum_specifier | declaration)* CLB_FIG
     ;
 
 cls_method
-    : (ACCESS_MODIFIER? OTHER_MODIFIER*) type_specifier IDENTIFIER OPB_RND argument_expression_list? CLB_RND OPB_FIG (statement)* CLB_FIG
+    : declaration_specifier IDENTIFIER declarator_suffix compound_statement
     ;
-
-//TODO: think
-function_definition
-//scope Symbols; // put parameters and locals into same scope for now
-//@init {
-//  $Symbols::types = new HashSet();
-//}
-	:	declaration_specifiers? direct_declarator
-		(	declaration+ compound_statement	// K&R style
-		|	compound_statement				// ANSI style
-		)
-	;
-
-declaration_specifiers
-	:   ( (ACCESS_MODIFIER | OTHER_MODIFIER)
-            | type_specifier
-            | TYPE_QUALIFIER
-        )+
-	;
 
 assignment_operator: ASSIGN_AND_MODIFY_OPERATOR | ASSIGN;
 
 declaration
-	: declaration_specifiers init_declarator_list? SEMICOLON
+	: declaration_specifier init_declarator_list SEMICOLON
+	;
+
+declaration_specifier
+	: (ACCESS_MODIFIER | OTHER_MODIFIER)* type_specifier arr_suffix*
 	;
 
 init_declarator_list
@@ -44,37 +23,33 @@ init_declarator_list
 	;
 
 init_declarator
-	: direct_declarator (assignment_operator initializer)?
+	: IDENTIFIER (assignment_operator assignment_expression)?
 	;
 
-direct_declarator
-	: (IDENTIFIER | OPB_RND direct_declarator CLB_RND) declarator_suffix*
-	;
+arr_suffix
+        : OPB_SQ COMMA* CLB_SQ
+        ;
+
+arr_arg_suffix
+        : OPB_SQ argument_expression_list* CLB_SQ
+        ;
+
+arg_suffix
+        : OPB_RND argument_expression_list* CLB_RND
+        ;
 
 declarator_suffix
-	:   OPB_SQ constant_expression CLB_SQ
-    |   OPB_SQ CLB_SQ
-    |   OPB_RND parameter_type_list CLB_RND
-    |   OPB_RND identifier_list CLB_RND
-    |   OPB_RND CLB_RND
+	: OPB_RND parameter_type_list CLB_RND
+        | OPB_RND CLB_RND
 	;
 
 type_specifier
-	: (PRIMITIVE_TYPE_MODIFIER | PRIMITIVE_TYPE)
+	: PRIMITIVE_TYPE_MODIFIER? PRIMITIVE_TYPE
 	| enum_specifier
-	| type_id
-	;
-
-type_id
-    :   IDENTIFIER
-    ;
-
-specifier_qualifier_list
-	: ( TYPE_QUALIFIER | type_specifier )+
+	| IDENTIFIER
 	;
 
 enum_specifier
-//options {k=3;}
 	: ENUM OPB_FIG enumerator_list CLB_FIG
 	| ENUM IDENTIFIER OPB_FIG enumerator_list CLB_FIG
 	| ENUM IDENTIFIER
@@ -98,35 +73,11 @@ parameter_list
 	;
 
 parameter_declaration
-	: declaration_specifiers (direct_abstract_declarator)*
+	: declaration_specifier IDENTIFIER
 	;
 
 identifier_list
 	: IDENTIFIER (COMMA IDENTIFIER)*
-	;
-
-type_name
-	: specifier_qualifier_list direct_abstract_declarator?
-	;
-
-direct_abstract_declarator
-	:	( OPB_RND direct_abstract_declarator CLB_RND | abstract_declarator_suffix ) abstract_declarator_suffix*
-	;
-
-abstract_declarator_suffix
-	:	OPB_SQ CLB_SQ
-	|	OPB_SQ constant_expression CLB_SQ
-	|	OPB_RND CLB_RND
-	|	OPB_RND parameter_type_list CLB_RND
-	;
-	
-initializer
-	: assignment_expression
-	| OPB_FIG initializer_list COMMA? CLB_FIG
-	;
-
-initializer_list
-	: initializer (COMMA initializer)*
 	;
 
 // E x p r e s s i o n s
@@ -144,23 +95,26 @@ multiplicative_expression
 	;
 
 cast_expression
-	: OPB_RND type_name CLB_RND cast_expression
+	: OPB_RND IDENTIFIER CLB_RND cast_expression
 	| unary_expression
 	;
 
 unary_expression
-	: postfix_expression
+	: constructor_call 
+        | postfix_expression
 	| INCREMENT unary_expression
 	| DECREMENT unary_expression
 	| UNARY_OPERATOR cast_expression
 	;
+
+constructor_call : NEW type_specifier (arr_arg_suffix* | arg_suffix*);
 
 postfix_expression
 	:   primary_expression
         (   OPB_SQ expression CLB_SQ
         |   OPB_RND CLB_RND 
         |   OPB_RND argument_expression_list CLB_RND 
-        |   DOT IDENTIFIER
+        |   DOT postfix_expression
         |   (INCREMENT | DECREMENT)
         )*
 	;
@@ -238,31 +192,16 @@ shift_expression
 // S t a t e m e n t s
 
 statement
-	: labeled_statement
-	| compound_statement
+	: compound_statement
 	| expression_statement
 	| selection_statement
 	| iteration_statement
 	| jump_statement
 	;
 
-labeled_statement
-	: IDENTIFIER DOUBLE_DOT statement
-	| CASE constant_expression DOUBLE_DOT statement
-	| DEFAULT DOUBLE_DOT statement
-	;
-
-//TODO: think
+//code block
 compound_statement
-//scope Symbols; // blocks have a scope of symbols
-//@init {
-//  $Symbols::types = new HashSet();
-//}
-	: OPB_FIG declaration* statement_list? CLB_FIG
-	;
-
-statement_list
-	: statement+
+	: OPB_FIG declaration* statement* CLB_FIG
 	;
 
 expression_statement
@@ -271,8 +210,7 @@ expression_statement
 	;
 
 selection_statement
-	: IF OPB_RND expression CLB_RND statement (options {k=1; backtrack=false;}:ELSE statement)?
-	| SWITCH OPB_RND expression CLB_RND statement
+	: IF OPB_RND expression CLB_RND statement (ELSE statement)?
 	;
 
 iteration_statement
@@ -289,14 +227,13 @@ jump_statement
 	;
 
 
-
+NEW : 'new';
 CLASS : 'class';
 ENUM : 'enum';
 CASE : 'case';
 DEFAULT: 'default';
 IF: 'if';
 ELSE: 'else';
-SWITCH: 'switch';
 FOR: 'for';
 WHILE: 'while';
 DO: 'do';
@@ -308,8 +245,6 @@ PRIMITIVE_TYPE	: 'void' | 'char' | 'short' | 'int' | 'long' | 'float' | 'double'
 
 PRIMITIVE_TYPE_MODIFIER	: 'unsigned' | 'signed';
     
-TYPE_QUALIFIER : 'const' | 'volatile';
-
 ACCESS_MODIFIER : 'private' | 'protected' | 'public' | 'internal';
 
 OTHER_MODIFIER : 'static' | 'const' | 'abstract';
@@ -439,9 +374,9 @@ UnicodeEscape
 WS  :  (' '|'\r'|'\t'|'\u000C'|'\n') -> skip
     ;
 
-//COMMENT
-//    :   ('/*' ( options {greedy=false;} : . )* '*/' ) -> skip
-//    ;
+COMMENT
+    :   ('/*' (.)*? '*/' ) -> skip
+    ;
 
 LINE_COMMENT
     : ('//' ~('\n'|'\r')* '\r'? '\n') -> skip
