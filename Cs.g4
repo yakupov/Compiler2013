@@ -23,7 +23,7 @@ init_declarator_list
 	;
 
 init_declarator
-	: IDENTIFIER (assignment_operator assignment_expression)?
+	: IDENTIFIER? (assignment_operator assignment_expression)?
 	;
 
 arr_suffix
@@ -201,7 +201,7 @@ statement
 
 //code block
 compound_statement
-	: OPB_FIG declaration* statement* CLB_FIG
+	: OPB_FIG (declaration | statement)* CLB_FIG
 	;
 
 expression_statement

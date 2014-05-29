@@ -2,10 +2,11 @@ public class Test
 {
    private int xxx = 1, yyy;
    
-   public static void Main()
+   public static void Main(int i)
    {
       int a = 5;
       int[,][] testInt = new int[1,2][3];
-      System.Console.WriteLine("Hello, World!");;
+      System.Console.WriteLine("Hello, World!");
+      a = 6;
    }
 }
