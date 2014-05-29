@@ -1,6 +1,6 @@
 public class Test
 {
-   private int xxx = 1;
+   private int xxx = 1, yyy;
    
    public static void Main()
    {
