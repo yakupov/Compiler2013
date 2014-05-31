@@ -1,6 +1,7 @@
 public class Test
 {
    private int xxx = 1, yyy;
+   private int zzz = yyy = 123;
    
    public static void Main(int i)
    {

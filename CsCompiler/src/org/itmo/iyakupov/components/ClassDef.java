@@ -20,6 +20,7 @@ public class ClassDef implements GenerableCode {
 	protected String name;
 	protected ArrayList<ClassField> fields = new ArrayList<ClassField>();
 	protected ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
+	protected ArrayList<InitAssignment> initAssignments = new ArrayList<InitAssignment>();
 
 	public ClassDef(ParserRuleContext tree, SymbolTable st) {
 		this.tree = tree;
@@ -67,6 +68,32 @@ public class ClassDef implements GenerableCode {
 		st.endClass();
 	}
 	
+	public void addAssignment(ClassField lvalue, ParserRuleContext expression) {
+		String initOperator = null;
+		ParserRuleContext nextLvalue = null;
+		for (ParserRuleContext child : expression.getRuleContexts(ParserRuleContext.class)) {
+			if (child.getRuleIndex() == CsParser.RULE_conditional_expression) {
+				initAssignments.add(new InitAssignment(child, lvalue));
+				return;
+			} else if (child.getRuleIndex() == CsParser.RULE_lvalue) {
+				nextLvalue = child;
+			}  else if (child.getRuleIndex() == CsParser.RULE_assignment_operator) {
+				TerminalNode tToken = child.getToken(CsParser.ASSIGN, 0);
+				if (tToken != null)
+					initOperator = tToken.getText();
+			} else if (child.getRuleIndex() == CsParser.RULE_assignment_expression) {
+				if (nextLvalue != null && "=".equals(initOperator)) {
+					addAssignment(processInitLvalue(nextLvalue), child);
+				}
+			}
+		}	
+	}
+	
+	protected ClassField processInitLvalue(ParserRuleContext nextLvalue) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	@Override
 	public void writeCode(StringBuilder sb) {
 		// TODO Auto-generated method stub
@@ -77,5 +104,7 @@ public class ClassDef implements GenerableCode {
 		if (!b)
 			throw new RuntimeException("Assertion failed (compiler error) when processing " + comment);
 	}
+
+
 
 }
