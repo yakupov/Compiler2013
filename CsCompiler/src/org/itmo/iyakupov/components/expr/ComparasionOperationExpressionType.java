@@ -1,0 +1,29 @@
+package org.itmo.iyakupov.components.expr;
+
+import org.itmo.iyakupov.CodeWriter;
+
+public abstract class ComparasionOperationExpressionType extends BinaryOperationExpressionType {
+
+    public ComparasionOperationExpressionType(int lexemType) {
+        super(lexemType);
+    }
+
+    @Override
+    public void writeByteCode(CodeWriter writer) {
+        expression1.writeCode(writer);
+        expression2.writeCode(writer);
+        writer.writeComment("operation " + operation());
+        String label0 = format("label_%d", symbolTable.getNextId());
+        String label1 = format("label_%d", symbolTable.getNextId());
+        writer.println("%s %s", byteCode(), label0);
+        writer.increaseIndention();
+        writer.println("iconst_0");
+        writer.println("%s %s", "goto", label1);
+        writer.decreaseIndention();
+        writer.writeLabel(label0);
+        writer.println("iconst_1");
+        writer.decreaseIndention();
+        writer.writeLabel(label1);
+        writer.decreaseIndention();
+    }
+}

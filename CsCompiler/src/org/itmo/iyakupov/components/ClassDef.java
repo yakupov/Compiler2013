@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsParser;
 
@@ -95,7 +96,7 @@ public class ClassDef implements GenerableCode {
 	}
 
 	@Override
-	public void writeCode(StringBuilder sb) {
+	public void writeCode(CodeWriter cw) {
 		// TODO Auto-generated method stub
 
 	}

@@ -8,7 +8,7 @@ cls_method
     : declaration_specifier IDENTIFIER declarator_suffix compound_statement
     ;
 
-assignment_operator: ASSIGN_AND_MODIFY_OPERATOR | ASSIGN;
+assignment_operator: assign_and_modify_operator | ASSIGN;
 
 declaration
 	: declaration_specifier init_declarator_list SEMICOLON
@@ -104,7 +104,7 @@ unary_expression
         | postfix_expression
 	| INCREMENT unary_expression
 	| DECREMENT unary_expression
-	| UNARY_OPERATOR cast_expression
+	| unary_operator cast_expression
 	;
 
 constructor_call : NEW type_specifier (arr_arg_suffix* | arg_suffix*);
@@ -178,15 +178,15 @@ and_expression
 	: equality_expression (BIT_AND equality_expression)*
 	;
 equality_expression
-	: relational_expression (EQUALITY_OPERATOR relational_expression)*
+	: relational_expression (equality_operator relational_expression)*
 	;
 
 relational_expression
-	: shift_expression (COMPARSION_OPERATOR shift_expression)*
+	: shift_expression (comparsion_operator shift_expression)*
 	;
 
 shift_expression
-	: additive_expression (SHIFT_OPERATOR additive_expression)*
+	: additive_expression (shift_operator additive_expression)*
 	;
 
 // S t a t e m e n t s
@@ -251,33 +251,40 @@ OTHER_MODIFIER : 'static' | 'const' | 'abstract';
 
 ASSIGN: '=';
 
-ASSIGN_AND_MODIFY_OPERATOR
-	: '*='
-	| '/='
-	| '%='
-	| '+='
-	| '-='
-	| '<<='
-	| '>>='
-	| '&='
-	| '^='
-	| '|='
-	;
+assign_and_modify_operator: MUL_ASS | DIV_ASS | REM_ASS | ADD_ASS | SUB_ASS |
+                            LSHIFT_ASS | RSHIFT_ASS | XOR_ASS | OR_ASS;
+MUL_ASS: '*=';
+DIV_ASS: '/=';
+REM_ASS: '%=';
+ADD_ASS: '+=';
+SUB_ASS: '-=';
+LSHIFT_ASS: '<<=';
+RSHIFT_ASS: '>>=';
+AND_ASS: '&=';
+XOR_ASS: '^=';
+OR_ASS: '|=';
 
-UNARY_OPERATOR
-	: '&'
+unary_operator
+	: BIT_AND
 	| MUL
 	| PLUS
 	| MINUS
-	| '~'
-	| '!'
+	| NOT
 	;
 
-EQUALITY_OPERATOR: ('=='|'!=');
+equality_operator: (EQ|NEQ);
+EQ: '==';
+NEQ: '!=';
 
-COMPARSION_OPERATOR: ('<'|'>'|'<='|'>=');
+comparsion_operator: (GT|LT|GE|LE);
+GT: '>';
+LT: '<';
+GE: '>=';
+LE: '<=';
 
-SHIFT_OPERATOR: ('<<'|'>>');
+shift_operator: (LSHIFT|RSHIFT);
+LSHIFT: '<<';
+RSHIFT: '>>';
 
 INCREMENT: '++';
 DECREMENT: '--';
@@ -303,7 +310,8 @@ BIT_XOR: '^';
 AND: '&&';
 OR: '||';
 QUESTION: '?';
-PERCENT: '%';
+REM: '%';
+NOT: '!';
 
 IDENTIFIER
 	:	LETTER (LETTER|'0'..'9')*
