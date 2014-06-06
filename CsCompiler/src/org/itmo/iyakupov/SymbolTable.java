@@ -1,5 +1,7 @@
 package org.itmo.iyakupov;
 
+import org.itmo.iyakupov.components.Variable;
+
 //TODO
 public class SymbolTable {
 
@@ -11,6 +13,11 @@ public class SymbolTable {
 	public void endClass() {
 		// TODO Auto-generated method stub
 		
+	}
+
+	public Variable getVariable(String varName, int line) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

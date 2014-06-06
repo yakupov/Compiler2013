@@ -5,11 +5,11 @@ import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.components.Type;
+import org.itmo.iyakupov.components.Variable;
 
 public abstract class LValueAssignExpressionType extends ExpressionType {
-
-    private Expression expression1;
-    private Expression expression2;
+    Expression expression1;
+    Expression expression2;
 	private ErrorProcessor errors;
 	private SymbolTable symbolTable;
 	private ParserRuleContext tree;
@@ -31,14 +31,14 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
 
     @Override
     public void process() {
-        errors.assertEquals(2, tree.getChildCount(), tree.getLine(), "LValueAssign");
+        errors.assertEquals(2, tree.getChildCount(), tree.getStart().getLine(), "LValueAssign");
         expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
         expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 1), errors, symbolTable);
         expression1.getExpressionType().process();
         expression2.getExpressionType().process();
-        errors.assertTrue(expression1.isLValue(), tree.getLine(),
+        errors.assertTrue(expression1.isLValue(), tree.getStart().getLine(),
                 String.format("LValue is required: %s", operation()));
-        errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getLine(),
+        errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
                 String.format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
     }
 
@@ -50,7 +50,7 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
         writer.writeComment("operation " + operation());
         writer.println(byteCode());
         writer.println("dup");
-        VarDef varDef = expression1.getLValueVariable();
+        Variable varDef = expression1.getLValueVariable();
         assignToVariable(writer, varDef);
     }
 

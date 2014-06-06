@@ -4,16 +4,22 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsParser;
 import org.itmo.iyakupov.components.common.DeclarationSpecifier;
+import org.itmo.iyakupov.components.expr.Expression;
 
-public class ClassField extends ClassResident {
+public class Variable extends ClassResident {
 	private final Log log = LogFactory.getLog(getClass());
 	protected String initOperator;
+	protected SymbolTable symbolTable;
+	protected Expression initExpression;
 	
-	public ClassField(ParserRuleContext tree, ParserRuleContext declarationSpecifierTree, SymbolTable st, ClassDef parentClass) {
+	public Variable(ParserRuleContext tree, ParserRuleContext declarationSpecifierTree, 
+			SymbolTable st, ClassDef parentClass, ErrorProcessor ep) {
 		this.parent = parentClass;
+		this.symbolTable = st;
 		declarationSpecifier = new DeclarationSpecifier(declarationSpecifierTree, st);
 		
 		if (tree.getTokens(CsParser.IDENTIFIER).size() > 0) {
@@ -29,7 +35,7 @@ public class ClassField extends ClassResident {
 				if (tToken != null)
 					initOperator = tToken.getText();
 			} else if (child.getRuleIndex() == CsParser.RULE_assignment_expression) {
-				parentClass.addAssignment(this, child);
+				initExpression = new Expression(child, ep, symbolTable);
 			}
 		}
 

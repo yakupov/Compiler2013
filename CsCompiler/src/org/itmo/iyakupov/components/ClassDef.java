@@ -19,9 +19,9 @@ public class ClassDef implements GenerableCode {
 	protected List<TerminalNode> accessModifiers;
 	protected List<TerminalNode> otherModifiers;
 	protected String name;
-	protected ArrayList<ClassField> fields = new ArrayList<ClassField>();
+	protected ArrayList<Variable> fields = new ArrayList<Variable>();
 	protected ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
-	protected ArrayList<InitAssignment> initAssignments = new ArrayList<InitAssignment>();
+	//protected ArrayList<InitAssignment> initAssignments = new ArrayList<InitAssignment>();
 
 	public ClassDef(ParserRuleContext tree, SymbolTable st) {
 		this.tree = tree;
@@ -58,7 +58,7 @@ public class ClassDef implements GenerableCode {
 					} else if (details.getRuleIndex() == CsParser.RULE_init_declarator_list) {
 						for (ParserRuleContext declarator : details.getRuleContexts(ParserRuleContext.class)) {
 							if (declarator.getRuleIndex() == CsParser.RULE_init_declarator) {
-								fields.add(new ClassField(declarator, declarationSpecifier, st, this));							
+								fields.add(new Variable(declarator, declarationSpecifier, st, this));							
 							}
 						}
 					}
@@ -69,6 +69,7 @@ public class ClassDef implements GenerableCode {
 		st.endClass();
 	}
 	
+	/*
 	public void addAssignment(ClassField lvalue, ParserRuleContext expression) {
 		String initOperator = null;
 		ParserRuleContext nextLvalue = null;
@@ -94,7 +95,7 @@ public class ClassDef implements GenerableCode {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+*/
 	@Override
 	public void writeCode(CodeWriter cw) {
 		// TODO Auto-generated method stub

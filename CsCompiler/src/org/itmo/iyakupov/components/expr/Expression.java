@@ -10,7 +10,9 @@ import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.components.GenerableCode;
 import org.itmo.iyakupov.components.Type;
+import org.itmo.iyakupov.components.Variable;
 
+// захерачить мапу из rule в ExpressionType, внутри уже будет разбираться с токенами и т.п.
 public class Expression implements GenerableCode{
 
     private final ParserRuleContext tree;
@@ -62,29 +64,29 @@ public class Expression implements GenerableCode{
         });
         noChildren.put(CsLexer.IDENTIFIER, new ExpressionType(CsLexer.IDENTIFIER) {
         	private String varName;
-        	private VarDef varDef;
+        	private Variable varDef;
         	
         	@Override
         	public void process() {
         		varName = tree.getText();
-        		varDef = symbolTable.getVarDef(varName, tree.getLine());
-        		errors.assertTrue(varDef != null, tree.getLine(), "Cannot find variable : " + varName);
+        		varDef = symbolTable.getVariable(varName, tree.getStart().getLine());
+        		errors.assertTrue(varDef != null, tree.getStart().getLine(), "Cannot find variable : " + varName);
         	}
 
         	@Override
         	public void writeCode(CodeWriter writer) {
-        		if (symbolTable.isGlobalVar(varName, tree.getLine())) {
+        		if (symbolTable.isGlobalVar(varName, tree.getStart().getLine())) {
         			writer.println("getstatic Main/%s %s", varName,
         					varDef.getType().getDescriptor());
         		} else {
-        			writer.println("%s %s", getType().load(), symbolTable.getVariableId(varName, tree.getLine()));
+        			writer.println("%s %s", getType().load(), symbolTable.getVariableId(varName, tree.getStart().getLine()));
         		}
         	}
 
         	@Override
         	public Type getType() {
         		if (varDef == null) {
-        			throw new IllegalStateException("process() was not called : " + tree.getLine());
+        			throw new IllegalStateException("process() was not called : " + tree.getStart().getLine());
         		}
         		return varDef.getType();
         	}
@@ -103,7 +105,7 @@ public class Expression implements GenerableCode{
 
             @Override
             public void process() {
-                errors.assertEquals(1, tree.getChildCount(), tree.getLine(), "-");
+                errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "-");
                 expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
                 expression.expressionType.process();
             }
@@ -130,7 +132,7 @@ public class Expression implements GenerableCode{
 
             @Override
             public void process() {
-                errors.assertEquals(1, tree.getChildCount(), tree.getLine(), "POST_INC");
+                errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_INC");
                 expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
                 expression.expressionType.process();
             }
@@ -142,7 +144,7 @@ public class Expression implements GenerableCode{
                 writer.println("dup");
                 writer.println("iconst_1");
                 writer.println("iadd");
-                VarDef varDef = expression.getLValueVariable();
+                Variable varDef = expression.getLValueVariable();
                 assignToVariable(writer, varDef);
             }
 
@@ -163,7 +165,7 @@ public class Expression implements GenerableCode{
             private Expression expression;
             @Override
             public void process() {
-                errors.assertEquals(1, tree.getChildCount(), tree.getLine(), "POST_DEC");
+                errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_DEC");
                 expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
                 expression.expressionType.process();
             }
@@ -175,7 +177,7 @@ public class Expression implements GenerableCode{
                 writer.println("dup");
                 writer.println("iconst_1");
                 writer.println("isub");
-                VarDef varDef = expression.getLValueVariable();
+                Variable varDef = expression.getLValueVariable();
                 assignToVariable(writer, varDef);
             }
 
@@ -195,11 +197,11 @@ public class Expression implements GenerableCode{
 
     }
 
-    private void assignToVariable(CodeWriter writer, VarDef varDef) {
-        if (symbolTable.isGlobalVar(varDef, tree.getLine())) {
+    private void assignToVariable(CodeWriter writer, Variable varDef) {
+        if (symbolTable.isGlobalVar(varDef, tree.getStart().getLine())) {
             writer.println("putstatic Main/%s %s", varDef.getName(), varDef.getType().getDescriptor());
         } else {
-            writer.println("%s %s", getType().store(), symbolTable.getVariableId(varDef, tree.getLine()));
+            writer.println("%s %s", getType().store(), symbolTable.getVariableId(varDef, tree.getStart().getLine()));
         }
     }
 
@@ -210,21 +212,21 @@ public class Expression implements GenerableCode{
 
             @Override
             public void process() {
-                errors.assertEquals(2, tree.getChildCount(), tree.getLine(), "ASSIGN : " + tree.getChildCount());
+                errors.assertEquals(2, tree.getChildCount(), tree.getStart().getLine(), "ASSIGN : " + tree.getChildCount());
                 expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
                 expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 1), errors, symbolTable);
                 expression1.expressionType.process();
                 expression2.expressionType.process();
-                errors.assertTrue(expression1.isLValue(), tree.getLine(), "Left value is required");
-                errors.assertTrue(expression1.getType() != Type.VOID, tree.getLine(), "Cannot assign value to void");
-                errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getLine(),
+                errors.assertTrue(expression1.isLValue(), tree.getStart().getLine(), "Left value is required");
+                errors.assertTrue(expression1.getType() != Type.VOID, tree.getStart().getLine(), "Cannot assign value to void");
+                errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
                         format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
             }
 
             @Override
             public void writeCode(CodeWriter writer) {
                 expression2.writeCode(writer);
-                VarDef varDef = expression1.getLValueVariable();
+                Variable varDef = expression1.getLValueVariable();
                 assignToVariable(writer, varDef);
                 expression1.writeCode(writer);
             }
@@ -250,7 +252,7 @@ public class Expression implements GenerableCode{
                 return "imul";
             }
         });
-        twoChildren.put(CsLexer.DIV_ASS, new LValueAssignExpressionType(CsLexer.DIV_ASS) {
+        twoChildren.put(CsLexer.DIV_ASS, new LValueAssignExpressionType(CsLexer.DIV_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "/=";
@@ -261,7 +263,7 @@ public class Expression implements GenerableCode{
                 return "idiv";
             }
         });
-        twoChildren.put(CsLexer.REM_ASS, new LValueAssignExpressionType(CsLexer.REM_ASS) {
+        twoChildren.put(CsLexer.REM_ASS, new LValueAssignExpressionType(CsLexer.REM_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "%=";
@@ -272,7 +274,7 @@ public class Expression implements GenerableCode{
                 return "irem";
             }
         });
-        twoChildren.put(CsLexer.ADD_ASS, new LValueAssignExpressionType(CsLexer.ADD_ASS) {
+        twoChildren.put(CsLexer.ADD_ASS, new LValueAssignExpressionType(CsLexer.ADD_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "+=";
@@ -283,7 +285,7 @@ public class Expression implements GenerableCode{
                 return "iadd";
             }
         });
-        twoChildren.put(CsLexer.SUB_ASS, new LValueAssignExpressionType(CsLexer.SUB_ASS) {
+        twoChildren.put(CsLexer.SUB_ASS, new LValueAssignExpressionType(CsLexer.SUB_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "-=";
@@ -294,7 +296,7 @@ public class Expression implements GenerableCode{
                 return "imun";
             }
         });
-        twoChildren.put(CsLexer.LSHIFT_ASS, new LValueAssignExpressionType(CsLexer.LSHIFT_ASS) {
+        twoChildren.put(CsLexer.LSHIFT_ASS, new LValueAssignExpressionType(CsLexer.LSHIFT_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "<<=";
@@ -305,7 +307,7 @@ public class Expression implements GenerableCode{
                 return "ishl";
             }
         });
-        twoChildren.put(CsLexer.RSHIFT_ASS, new LValueAssignExpressionType(CsLexer.RSHIFT_ASS) {
+        twoChildren.put(CsLexer.RSHIFT_ASS, new LValueAssignExpressionType(CsLexer.RSHIFT_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return ">>=";
@@ -316,7 +318,7 @@ public class Expression implements GenerableCode{
                 return "ishr";
             }
         });
-        twoChildren.put(CsLexer.AND_AS, new LValueAssignExpressionType(CsLexer.AND_ASS) {
+        twoChildren.put(CsLexer.AND_ASS, new LValueAssignExpressionType(CsLexer.AND_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "&=";
@@ -327,7 +329,7 @@ public class Expression implements GenerableCode{
                 return "iand";
             }
         });
-        twoChildren.put(CsLexer.OR_ASS, new LValueAssignExpressionType(CsLexer.OR_ASS) {
+        twoChildren.put(CsLexer.OR_ASS, new LValueAssignExpressionType(CsLexer.OR_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "|=";
@@ -338,7 +340,7 @@ public class Expression implements GenerableCode{
                 return "ior";
             }
         });
-        twoChildren.put(CsLexer.XOR_ASS, new LValueAssignExpressionType(CsLexer.XOR_ASS) {
+        twoChildren.put(CsLexer.XOR_ASS, new LValueAssignExpressionType(CsLexer.XOR_ASS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "^=";
@@ -349,7 +351,7 @@ public class Expression implements GenerableCode{
                 return "ixor";
             }
         });
-        twoChildren.put(CsLexer.OR, new LogicalOperationExpressionType(CsLexer.OR) {
+        twoChildren.put(CsLexer.OR, new LogicalOperationExpressionType(CsLexer.OR, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "||";
@@ -370,7 +372,7 @@ public class Expression implements GenerableCode{
                 return "iconst_1";
             }
         });
-        twoChildren.put(CsLexer.AND, new LogicalOperationExpressionType(CsLexer.AND) {
+        twoChildren.put(CsLexer.AND, new LogicalOperationExpressionType(CsLexer.AND, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "&&";
@@ -391,7 +393,7 @@ public class Expression implements GenerableCode{
                 return "iconst_0";
             }
         });
-        twoChildren.put(CsLexer.SHL, new BinaryOperationExpressionType(CsLexer.PLUS) {
+        twoChildren.put(CsLexer.LSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "<<";
@@ -402,7 +404,7 @@ public class Expression implements GenerableCode{
                 return "ishl";
             }
         });
-        twoChildren.put(CsLexer.SHR, new BinaryOperationExpressionType(CsLexer.PLUS) {
+        twoChildren.put(CsLexer.RSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return ">>";
@@ -413,7 +415,7 @@ public class Expression implements GenerableCode{
                 return "ishr";
             }
         });
-        twoChildren.put(CsLexer.PLUS, new BinaryOperationExpressionType(CsLexer.PLUS) {
+        twoChildren.put(CsLexer.PLUS, new BinaryOperationExpressionType(CsLexer.PLUS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "+";
@@ -424,7 +426,7 @@ public class Expression implements GenerableCode{
                 return "iadd";
             }
         });
-        twoChildren.put(CsLexer.MINUS, new BinaryOperationExpressionType(CsLexer.MINUS) {
+        twoChildren.put(CsLexer.MINUS, new BinaryOperationExpressionType(CsLexer.MINUS, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "-";
@@ -435,7 +437,7 @@ public class Expression implements GenerableCode{
                 return "isub";
             }
         });
-        twoChildren.put(CsLexer.MUL, new BinaryOperationExpressionType(CsLexer.MUL) {
+        twoChildren.put(CsLexer.MUL, new BinaryOperationExpressionType(CsLexer.MUL, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "*";
@@ -446,7 +448,7 @@ public class Expression implements GenerableCode{
                 return "imul";
             }
         });
-        twoChildren.put(CsLexer.DIV, new BinaryOperationExpressionType(CsLexer.DIV) {
+        twoChildren.put(CsLexer.DIV, new BinaryOperationExpressionType(CsLexer.DIV, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "/";
@@ -457,7 +459,7 @@ public class Expression implements GenerableCode{
                 return "idiv";
             }
         });
-        twoChildren.put(CsLexer.PERCENT, new BinaryOperationExpressionType(CsLexer.PERCENT) {
+        twoChildren.put(CsLexer.REM, new BinaryOperationExpressionType(CsLexer.REM, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "%";
@@ -468,7 +470,7 @@ public class Expression implements GenerableCode{
                 return "irem";
             }
         });
-        twoChildren.put(CsLexer.AND, new BinaryOperationExpressionType(CsLexer.AND) {
+        twoChildren.put(CsLexer.AND, new BinaryOperationExpressionType(CsLexer.AND, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "&";
@@ -479,7 +481,7 @@ public class Expression implements GenerableCode{
                 return "iand";
             }
         });
-        twoChildren.put(CsLexer.BIT_XOR, new BinaryOperationExpressionType(CsLexer.BIT_XOR) {
+        twoChildren.put(CsLexer.BIT_XOR, new BinaryOperationExpressionType(CsLexer.BIT_XOR, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "|";
@@ -490,7 +492,7 @@ public class Expression implements GenerableCode{
                 return "ixor";
             }
         });
-        twoChildren.put(CsLexer.OR, new BinaryOperationExpressionType(CsLexer.OR) {
+        twoChildren.put(CsLexer.OR, new BinaryOperationExpressionType(CsLexer.OR, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "^";
@@ -501,7 +503,7 @@ public class Expression implements GenerableCode{
                 return "ior";
             }
         });
-        twoChildren.put(CsLexer.EQUALITY_OPERATOR, new ComparasionOperationExpressionType(CsLexer.EQUALITY_OPERATOR) {
+        twoChildren.put(CsLexer.EQ, new ComparasionOperationExpressionType(CsLexer.EQ) {
             @Override
             public String operation() {
                 return "==";
@@ -587,7 +589,17 @@ public class Expression implements GenerableCode{
     }
  
 
-    private Map<Integer, ExpressionType> getMap(ParserRuleContext tree) {
+    private Object determineExpressionType(ParserRuleContext tree) {
+    	for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
+    		if (child)
+    	}
+    	
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	private Map<Integer, ExpressionType> getMap(ParserRuleContext tree) {
         switch (tree.getChildCount()) {
             case 0: {
                 return noChildren;
@@ -599,7 +611,7 @@ public class Expression implements GenerableCode{
                 return twoChildren;
             }
             default: {
-                errors.assertTrue(false, tree.getLine(), "Unexpected number of childs");
+                errors.assertTrue(false, tree.getStart().getLine(), "Unexpected number of childs");
                 return null;
             }
         }
@@ -614,7 +626,7 @@ public class Expression implements GenerableCode{
         if (expressionType != null) {
             expressionType.process();
         } else {
-            errors.assertTrue(false, tree.getLine(), "Cannot find value in map : "
+            errors.assertTrue(false, tree.getStart().getLine(), "Cannot find value in map : "
                     + tree.getType());
             return;
         }
@@ -622,14 +634,14 @@ public class Expression implements GenerableCode{
     }
 
     private Expression getLValueVariableExpr() {
-        errors.assertTrue(isLValue(), tree.getLine(), "LValue is expected");
-        if (expressionType.lexemType == CsLexer.ID) {
+        errors.assertTrue(isLValue(), tree.getStart().getLine(), "LValue is expected");
+        if (expressionType.lexemType == CsLexer.IDENTIFIER) {
             return this;
         }
         return ((LValueAssignExpressionType) expressionType).expression1.getLValueVariableExpr();
     }
 
-    public VarDef getLValueVariable() {
+    public Variable getLValueVariable() {
         return ((IDExpressionType) getLValueVariableExpr().expressionType).varDef;
     }
 

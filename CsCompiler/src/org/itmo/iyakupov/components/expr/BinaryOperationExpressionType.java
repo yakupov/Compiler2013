@@ -7,12 +7,11 @@ import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.components.Type;
 
 public abstract class BinaryOperationExpressionType extends ExpressionType {
-
-    protected Expression expression1;
-    protected Expression expression2;
-	private ErrorProcessor errors;
-	private SymbolTable symbolTable;
-	private ParserRuleContext tree;
+    Expression expression1;
+    Expression expression2;
+    protected ErrorProcessor errors;
+	protected SymbolTable symbolTable;
+	protected ParserRuleContext tree;
 
     public BinaryOperationExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
         super(lexemType);
