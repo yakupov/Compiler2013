@@ -1,15 +1,18 @@
 package org.itmo.iyakupov.components.expr;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.itmo.iyakupov.CodeWriter;
+import org.itmo.iyakupov.ErrorProcessor;
+import org.itmo.iyakupov.SymbolTable;
 
 public abstract class ComparasionOperationExpressionType extends BinaryOperationExpressionType {
 
-    public ComparasionOperationExpressionType(int lexemType) {
-        super(lexemType);
+    public ComparasionOperationExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
+        super(lexemType, errors, symbolTable, tree);
     }
 
     @Override
-    public void writeByteCode(CodeWriter writer) {
+    public void writeCode(CodeWriter writer) {
         expression1.writeCode(writer);
         expression2.writeCode(writer);
         writer.writeComment("operation " + operation());

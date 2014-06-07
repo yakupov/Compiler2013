@@ -5,7 +5,7 @@ import org.itmo.iyakupov.components.GenerableCode;
 import org.itmo.iyakupov.components.Type;
 
 public abstract class ExpressionType implements GenerableCode{
-	final int lexemType;
+	protected final int lexemType;
 
 	public ExpressionType(int lexemType) {
 		this.lexemType = lexemType;

@@ -8,16 +8,16 @@ import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsLexer;
+import org.itmo.iyakupov.a4autogen.CsParser;
 import org.itmo.iyakupov.components.GenerableCode;
 import org.itmo.iyakupov.components.Type;
 import org.itmo.iyakupov.components.Variable;
 
-// захерачить мапу из rule в ExpressionType, внутри уже будет разбираться с токенами и т.п.
-public class Expression implements GenerableCode{
+public class Expression implements GenerableCode {
 
-    private final ParserRuleContext tree;
+	private final ParserRuleContext tree;
     private final SymbolTable symbolTable;
-	private final ErrorProcessor errors;
+    private final ErrorProcessor errors;
     private final ExpressionType expressionType;
 
     private final Map<Integer, ExpressionType> noChildren;
@@ -62,40 +62,7 @@ public class Expression implements GenerableCode{
                 return Type.INT;
             }
         });
-        noChildren.put(CsLexer.IDENTIFIER, new ExpressionType(CsLexer.IDENTIFIER) {
-        	private String varName;
-        	private Variable varDef;
-        	
-        	@Override
-        	public void process() {
-        		varName = tree.getText();
-        		varDef = symbolTable.getVariable(varName, tree.getStart().getLine());
-        		errors.assertTrue(varDef != null, tree.getStart().getLine(), "Cannot find variable : " + varName);
-        	}
-
-        	@Override
-        	public void writeCode(CodeWriter writer) {
-        		if (symbolTable.isGlobalVar(varName, tree.getStart().getLine())) {
-        			writer.println("getstatic Main/%s %s", varName,
-        					varDef.getType().getDescriptor());
-        		} else {
-        			writer.println("%s %s", getType().load(), symbolTable.getVariableId(varName, tree.getStart().getLine()));
-        		}
-        	}
-
-        	@Override
-        	public Type getType() {
-        		if (varDef == null) {
-        			throw new IllegalStateException("process() was not called : " + tree.getStart().getLine());
-        		}
-        		return varDef.getType();
-        	}
-
-        	@Override
-        	public boolean isLValue() {
-        		return true;
-        	}
-        });
+        noChildren.put(CsLexer.IDENTIFIER, new IDExpressionType(CsLexer.IDENTIFIER, errors, symbolTable, tree));
     }
    
 
@@ -220,7 +187,7 @@ public class Expression implements GenerableCode{
                 errors.assertTrue(expression1.isLValue(), tree.getStart().getLine(), "Left value is required");
                 errors.assertTrue(expression1.getType() != Type.VOID, tree.getStart().getLine(), "Cannot assign value to void");
                 errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
-                        format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
+                        String.format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
             }
 
             @Override
@@ -503,7 +470,7 @@ public class Expression implements GenerableCode{
                 return "ior";
             }
         });
-        twoChildren.put(CsLexer.EQ, new ComparasionOperationExpressionType(CsLexer.EQ) {
+        twoChildren.put(CsLexer.EQ, new ComparasionOperationExpressionType(CsLexer.EQ, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "==";
@@ -514,7 +481,7 @@ public class Expression implements GenerableCode{
                 return "if_icmpeq";
             }
         });
-        twoChildren.put(CsLexer.NEQ, new ComparasionOperationExpressionType(CsLexer.NEQ) {
+        twoChildren.put(CsLexer.NEQ, new ComparasionOperationExpressionType(CsLexer.NEQ, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "==";
@@ -525,7 +492,7 @@ public class Expression implements GenerableCode{
                 return "if_icmpne";
             }
         });
-        twoChildren.put(CsLexer.LT, new ComparasionOperationExpressionType(CsLexer.LT) {
+        twoChildren.put(CsLexer.LT, new ComparasionOperationExpressionType(CsLexer.LT, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "<";
@@ -536,7 +503,7 @@ public class Expression implements GenerableCode{
                 return "if_icmplt";
             }
         });
-        twoChildren.put(CsLexer.LE, new ComparasionOperationExpressionType(CsLexer.LE) {
+        twoChildren.put(CsLexer.LE, new ComparasionOperationExpressionType(CsLexer.LE, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return "<=";
@@ -547,7 +514,7 @@ public class Expression implements GenerableCode{
                 return "if_icmple";
             }
         });
-        twoChildren.put(CsLexer.GT, new ComparasionOperationExpressionType(CsLexer.GT) {
+        twoChildren.put(CsLexer.GT, new ComparasionOperationExpressionType(CsLexer.GT, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return ">";
@@ -558,7 +525,7 @@ public class Expression implements GenerableCode{
                 return "if_icmpgt";
             }
         });
-        twoChildren.put(CsLexer.GE, new ComparasionOperationExpressionType(CsLexer.GE) {
+        twoChildren.put(CsLexer.GE, new ComparasionOperationExpressionType(CsLexer.GE, errors, symbolTable, tree) {
             @Override
             public String operation() {
                 return ">=";
@@ -585,15 +552,81 @@ public class Expression implements GenerableCode{
         initOneChildren();
         this.twoChildren = new HashMap<Integer, ExpressionType>();
         initTwoChildren();
-        expressionType = getMap(tree).get(determineExpressionType(tree));
+        expressionType = determineExpressionType(tree);
     }
  
 
-    private Object determineExpressionType(ParserRuleContext tree) {
+    private ExpressionType determineExpressionType(ParserRuleContext tree) {
+    	switch (tree.getRuleIndex()) {
+    	case CsParser.RULE_additive_expression:
+    	case CsParser.RULE_multiplicative_expression:
+    	case CsParser.RULE_logical_and_expression:
+    	case CsParser.RULE_logical_or_expression:
+    	case CsParser.RULE_inclusive_or_expression:
+    	case CsParser.RULE_exclusive_or_expression:
+    	case CsParser.RULE_and_expression: {
+    		if (tree.getChildCount() == 0)
+    			throw new RuntimeException("Tree wo children! Error! " + tree.toString());
+    		if (tree.getChildCount() == 1)
+    			return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
+    		Integer[] possibleOperators = {CsParser.PLUS, CsParser.MINUS, CsParser.MUL, CsParser.DIV, CsParser.REM, 
+    				CsParser.AND, CsParser.OR, CsParser.BIT_XOR, CsParser.BIT_AND, CsParser.BIT_OR};
+    		for (Integer operator : possibleOperators) {
+    			if (tree.getTokens(operator).size() > 0)
+    				return twoChildren.get(operator);
+    		}
+    		throw new RuntimeException("Undefined operator Error! " + tree.toString());
+    	}
+    	case CsParser.RULE_equality_expression:
+    	case CsParser.RULE_relational_expression:
+    	case CsParser.RULE_shift_expression: {
+    		if (tree.getChildCount() == 0)
+    			throw new RuntimeException("Tree wo children! Error! " + tree.toString());
+    		if (tree.getChildCount() == 1)
+    			return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
+    		Integer[] possibleOperators = {CsParser.EQ, CsParser.NEQ, CsParser.GT, CsParser.LT, CsParser.GE, 
+    				CsParser.LE, CsParser.LSHIFT, CsParser.RSHIFT};
+    		for (Integer operator : possibleOperators) {
+    			if (tree.getRuleContext(ParserRuleContext.class, 1).getTokens(operator).size() > 0)
+    				return twoChildren.get(operator);
+    		}
+    		throw new RuntimeException("Undefined operator Error! " + tree.toString());
+    	}
+    	case CsParser.RULE_assignment_expression: {
+    		if (tree.getChildCount() == 0)
+    			throw new RuntimeException("Tree wo children! Error! " + tree.toString());
+    		if (tree.getChildCount() == 1)
+    			return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
+    		if (tree.getRuleContext(ParserRuleContext.class, 1).getTokens(CsParser.ASSIGN).size() > 0)
+    			return twoChildren.get(CsParser.ASSIGN);
+    		Integer[] possibleOperators = {CsParser.ADD_ASS, CsParser.SUB_ASS, CsParser.MUL_ASS, CsParser.DIV_ASS, 
+    				CsParser.LSHIFT_ASS, CsParser.RSHIFT_ASS, CsParser.ADD_ASS, CsParser.OR_ASS, CsParser.XOR_ASS};
+    		for (Integer operator : possibleOperators) {
+    			if (tree.getRuleContext(ParserRuleContext.class, 1).
+    					getRuleContext(ParserRuleContext.class, 0).getTokens(operator).size() > 0)
+    				return twoChildren.get(operator);
+    		}
+    		throw new RuntimeException("Undefined operator Error! " + tree.toString());
+    	}
+    	case CsParser.RULE_unary_expression: {
+    		if (tree.getChildCount() == 0)
+    			throw new RuntimeException("Tree wo children! Error! " + tree.toString());
+    		if (tree.getChildCount() == 1)
+    			return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
+    		Integer[] possibleOperators = {CsParser.INCREMENT, CsParser.DECREMENT, CsParser.PLUS, CsParser.MINUS, CsParser.NOT};
+    		for (Integer operator : possibleOperators) {
+    			if (tree.getRuleContext(ParserRuleContext.class, 1).getTokens(operator).size() > 0)
+    				return oneChildren.get(operator);
+    		}
+    		throw new RuntimeException("Undefined operator Error! " + tree.toString());
+    	}
+    	
+    	}	
+    	/*
     	for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
     		if (child)
     	}
-    	
+    	*/
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -642,7 +675,7 @@ public class Expression implements GenerableCode{
     }
 
     public Variable getLValueVariable() {
-        return ((IDExpressionType) getLValueVariableExpr().expressionType).varDef;
+        return ((IDExpressionType) getLValueVariableExpr().expressionType).getVarDef();
     }
 
     public ExpressionType getExpressionType() {

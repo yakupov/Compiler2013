@@ -7,8 +7,8 @@ import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.components.Type;
 
 public abstract class BinaryOperationExpressionType extends ExpressionType {
-    Expression expression1;
-    Expression expression2;
+	protected Expression expression1;
+	protected Expression expression2;
     protected ErrorProcessor errors;
 	protected SymbolTable symbolTable;
 	protected ParserRuleContext tree;

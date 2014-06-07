@@ -60,7 +60,7 @@ enumerator_list
 	;
 
 enumerator
-	: IDENTIFIER (ASSIGN constant_expression)?
+	: IDENTIFIER (ASSIGN conditional_expression)?
 	;
 
 
@@ -83,28 +83,21 @@ identifier_list
 // E x p r e s s i o n s
 
 argument_expression_list
-	:   assignment_expression (COMMA assignment_expression)*
+	:   assignment_expression (COMMA argument_expression_list)?
 	;
 
 additive_expression
-	: (multiplicative_expression) (PLUS multiplicative_expression | MINUS multiplicative_expression)*
+	: (multiplicative_expression) (PLUS additive_expression | MINUS additive_expression)?
 	;
 
 multiplicative_expression
-	: (cast_expression) (MUL cast_expression | DIV cast_expression | '%' cast_expression)*
-	;
-
-cast_expression
-	: OPB_RND IDENTIFIER CLB_RND cast_expression
-	| unary_expression
+	: (unary_expression) (MUL unary_expression | DIV unary_expression | REM unary_expression)?
 	;
 
 unary_expression
 	: constructor_call 
         | postfix_expression
-	| INCREMENT unary_expression
-	| DECREMENT unary_expression
-	| unary_operator cast_expression
+	| unary_operator unary_expression
 	;
 
 constructor_call : NEW type_specifier (arr_arg_suffix* | arg_suffix*);
@@ -138,20 +131,12 @@ constant
 /////
 
 expression
-	: assignment_expression (COMMA assignment_expression)*
-	;
-
-constant_expression
-	: conditional_expression
+	: assignment_expression (COMMA expression)
 	;
 
 assignment_expression
-	: lvalue assignment_operator assignment_expression
+	: unary_expression assignment_operator assignment_expression
 	| conditional_expression
-	;
-	
-lvalue
-	:	unary_expression
 	;
 
 conditional_expression
@@ -159,34 +144,34 @@ conditional_expression
 	;
 
 logical_or_expression
-	: logical_and_expression (OR logical_and_expression)*
+	: logical_and_expression (OR logical_or_expression)?
 	;
 
 logical_and_expression
-	: inclusive_or_expression (AND inclusive_or_expression)*
+	: inclusive_or_expression (AND logical_and_expression)?
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression (BIT_OR exclusive_or_expression)*
+	: exclusive_or_expression (BIT_OR inclusive_or_expression)?
 	;
 
 exclusive_or_expression
-	: and_expression (BIT_XOR and_expression)*
+	: and_expression (BIT_XOR exclusive_or_expression)?
 	;
 
 and_expression
-	: equality_expression (BIT_AND equality_expression)*
+	: equality_expression (BIT_AND and_expression)?
 	;
 equality_expression
-	: relational_expression (equality_operator relational_expression)*
+	: relational_expression (equality_operator equality_expression)?
 	;
 
 relational_expression
-	: shift_expression (comparsion_operator shift_expression)*
+	: shift_expression (comparsion_operator relational_expression)?
 	;
 
 shift_expression
-	: additive_expression (shift_operator additive_expression)*
+	: additive_expression (shift_operator shift_expression)?
 	;
 
 // S t a t e m e n t s
@@ -265,8 +250,8 @@ XOR_ASS: '^=';
 OR_ASS: '|=';
 
 unary_operator
-	: BIT_AND
-	| MUL
+	: INCREMENT
+	| DECREMENT
 	| PLUS
 	| MINUS
 	| NOT
