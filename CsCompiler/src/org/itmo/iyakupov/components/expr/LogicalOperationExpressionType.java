@@ -23,12 +23,12 @@ public abstract class LogicalOperationExpressionType extends BinaryOperationExpr
     public void writeCode(CodeWriter writer) {
         writer.writeComment(operation());
         expression1.writeCode(writer);
-        String label0 = format("label_%d", symbolTable.getNextId());
+        String label0 = String.format("label_%d", symbolTable.getNextId());
         writer.println("%s %s", byteCode(), label0);
         expression2.writeCode(writer);
         writer.writeComment("operation " + operation());
         writer.println("%s %s", byteCode(), label0);
-        String label1 = format("label_%d", symbolTable.getNextId());
+        String label1 = String.format("label_%d", symbolTable.getNextId());
         writer.println(firstTrue());
         writer.println("%s %s", "goto", label1);
         writer.writeLabel(label0);

@@ -16,8 +16,8 @@ public abstract class ComparasionOperationExpressionType extends BinaryOperation
         expression1.writeCode(writer);
         expression2.writeCode(writer);
         writer.writeComment("operation " + operation());
-        String label0 = format("label_%d", symbolTable.getNextId());
-        String label1 = format("label_%d", symbolTable.getNextId());
+        String label0 = String.format("label_%d", symbolTable.getNextId());
+        String label1 = String.format("label_%d", symbolTable.getNextId());
         writer.println("%s %s", byteCode(), label0);
         writer.increaseIndention();
         writer.println("iconst_0");

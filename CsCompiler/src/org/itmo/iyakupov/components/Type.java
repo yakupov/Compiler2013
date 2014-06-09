@@ -94,7 +94,7 @@ public enum Type {
             throw new UnsupportedOperationException();
         }
     },
-    VARARG {
+    OBJECT {
         @Override
         public String getDescriptor() {
             return "[Ljava/lang/Object;";

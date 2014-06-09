@@ -7,5 +7,7 @@ public abstract class ClassResident {
 	protected String name;
 	protected DeclarationSpecifier declarationSpecifier;
 
-	//TODO
+	public String getName() {
+		return name;
+	}
 }

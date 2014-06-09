@@ -5,6 +5,7 @@ import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.components.Type;
+import org.itmo.iyakupov.components.TypeChecker;
 import org.itmo.iyakupov.components.Variable;
 
 public abstract class LValueAssignExpressionType extends ExpressionType {
@@ -51,7 +52,8 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
         writer.println(byteCode());
         writer.println("dup");
         Variable varDef = expression1.getLValueVariable();
-        assignToVariable(writer, varDef);
+        //assignToVariable(writer, varDef);
+        writer.println("%s %s", getType().store(), symbolTable.getVariableId(varDef, tree.getStart().getLine()));
     }
 
     @Override

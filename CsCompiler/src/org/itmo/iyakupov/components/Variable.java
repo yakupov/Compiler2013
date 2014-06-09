@@ -39,9 +39,17 @@ public class Variable extends ClassResident {
 			}
 		}
 
-		log.trace("Field added: " + tree.getToken(CsParser.IDENTIFIER, 0).getText());
+		log.trace("Field added: " + name);
 		// TODO Auto-generated constructor stub
 	}
 
+	
+	public Type getType() {
+		return declarationSpecifier.type;
+	}
+	
+	public String getObjName() {
+		return declarationSpecifier.objName;
+	}
 }
 

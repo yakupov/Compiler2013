@@ -24,7 +24,7 @@ final class IDExpressionType extends ExpressionType {
 	@Override
 	public void process() {
 		varName = tree.getText();
-		setVarDef(symbolTable.getVariable(varName, tree.getStart().getLine()));
+		varDef = symbolTable.getVariable(varName, tree.getStart().getLine());
 		errors.assertTrue(getVarDef() != null, tree.getStart().getLine(), "Cannot find variable : " + varName);
 	}
 

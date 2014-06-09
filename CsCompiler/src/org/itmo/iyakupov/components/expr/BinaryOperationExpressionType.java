@@ -5,6 +5,7 @@ import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.components.Type;
+import org.itmo.iyakupov.components.TypeChecker;
 
 public abstract class BinaryOperationExpressionType extends ExpressionType {
 	protected Expression expression1;
@@ -26,12 +27,12 @@ public abstract class BinaryOperationExpressionType extends ExpressionType {
 
     @Override
     public void process() {
-        errors.assertEquals(2, tree.getChildCount(), tree.getLine(), "LValueAssign");
+        errors.assertEquals(2, tree.getChildCount(), tree.getStart().getLine(), "LValueAssign");
         expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
         expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 1), errors, symbolTable);
         expression1.getExpressionType().process();
         expression2.getExpressionType().process();
-        errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getLine(),
+        errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
                 String.format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
     }
 

@@ -11,6 +11,7 @@ import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.a4autogen.CsParser;
 import org.itmo.iyakupov.components.GenerableCode;
 import org.itmo.iyakupov.components.Type;
+import org.itmo.iyakupov.components.TypeChecker;
 import org.itmo.iyakupov.components.Variable;
 
 public class Expression implements GenerableCode {
@@ -632,24 +633,6 @@ public class Expression implements GenerableCode {
 	}
 
 
-	private Map<Integer, ExpressionType> getMap(ParserRuleContext tree) {
-        switch (tree.getChildCount()) {
-            case 0: {
-                return noChildren;
-            }
-            case 1: {
-                return oneChildren;
-            }
-            case 2: {
-                return twoChildren;
-            }
-            default: {
-                errors.assertTrue(false, tree.getStart().getLine(), "Unexpected number of childs");
-                return null;
-            }
-        }
-    }
-
     public Type getType() {
         return expressionType.getType();
     }
@@ -659,8 +642,7 @@ public class Expression implements GenerableCode {
         if (expressionType != null) {
             expressionType.process();
         } else {
-            errors.assertTrue(false, tree.getStart().getLine(), "Cannot find value in map : "
-                    + tree.getType());
+            errors.assertTrue(false, tree.getStart().getLine(), "Cannot find value in map");
             return;
         }
         expressionType.writeCode(writer);

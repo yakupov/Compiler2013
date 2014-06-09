@@ -20,4 +20,24 @@ public class SymbolTable {
 		return null;
 	}
 
+	public boolean isGlobalVar(Variable varDef, int line) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public Object getVariableId(Variable varDef, int line) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Object getNextId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Object getVariableId(String varName, int line) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.itmo.iyakupov.CodeWriter;
+import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsParser;
 
@@ -58,7 +59,7 @@ public class ClassDef implements GenerableCode {
 					} else if (details.getRuleIndex() == CsParser.RULE_init_declarator_list) {
 						for (ParserRuleContext declarator : details.getRuleContexts(ParserRuleContext.class)) {
 							if (declarator.getRuleIndex() == CsParser.RULE_init_declarator) {
-								fields.add(new Variable(declarator, declarationSpecifier, st, this));							
+								fields.add(new Variable(declarator, declarationSpecifier, st, this, new ErrorProcessor()));							
 							}
 						}
 					}
