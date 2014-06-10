@@ -18,11 +18,13 @@ public class Variable implements GenerableCode {
 	protected Expression initExpression;
 	protected String name;
 	protected DeclarationSpecifier declarationSpecifier;
+	protected final int line;
 
 	public Variable(ParserRuleContext tree, ParserRuleContext declarationSpecifierTree, 
 			SymbolTable st, ErrorProcessor errorProcessor) {
 		this.symbolTable = st;
 		declarationSpecifier = new DeclarationSpecifier(declarationSpecifierTree, st);
+		line = tree.getStart().getLine();
 		
 		if (tree.getTokens(CsParser.IDENTIFIER).size() > 0) {
 			name = tree.getToken(CsParser.IDENTIFIER, 0).getText();
@@ -40,6 +42,8 @@ public class Variable implements GenerableCode {
 				initExpression = new Expression(child, errorProcessor, symbolTable);
 			}
 		}
+		
+		symbolTable.addVariable(this);
 	}
 
 	
@@ -59,6 +63,10 @@ public class Variable implements GenerableCode {
 	public void writeCode(CodeWriter writer) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public int getLine() {
+		return line;
 	}
 }
 

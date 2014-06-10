@@ -9,17 +9,6 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface CsListener extends ParseTreeListener {
 	/**
-	 * Enter a parse tree produced by {@link CsParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void enterExpression(@NotNull CsParser.ExpressionContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CsParser#expression}.
-	 * @param ctx the parse tree
-	 */
-	void exitExpression(@NotNull CsParser.ExpressionContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link CsParser#inclusive_or_expression}.
 	 * @param ctx the parse tree
 	 */

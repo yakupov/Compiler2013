@@ -25,4 +25,11 @@ public class ErrorProcessor {
 		}
 	}
 
+	public void fail(int line, String string) {
+		String errMsg = line + " : " + string;
+		log.error(errMsg);
+		if (throwOnFailedAss)
+			throw new RuntimeException(errMsg);	
+	}
+
 }

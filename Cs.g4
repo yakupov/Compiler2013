@@ -23,7 +23,7 @@ init_declarator_list
 	;
 
 init_declarator
-	: IDENTIFIER? (assignment_operator assignment_expression)?
+	: IDENTIFIER (assignment_operator assignment_expression)?
 	;
 
 arr_suffix
@@ -73,7 +73,7 @@ parameter_list
 	;
 
 parameter_declaration
-	: declaration_specifier IDENTIFIER
+	: declaration_specifier init_declarator
 	;
 
 identifier_list
@@ -83,7 +83,7 @@ identifier_list
 // E x p r e s s i o n s
 
 argument_expression_list
-	:   assignment_expression (COMMA argument_expression_list)?
+	:   assignment_expression (COMMA assignment_expression)*
 	;
 
 additive_expression
@@ -103,20 +103,17 @@ unary_expression
 constructor_call : NEW type_specifier (arr_arg_suffix* | arg_suffix*);
 
 postfix_expression
-	:   primary_expression
-        (   OPB_SQ expression CLB_SQ
-        |   OPB_RND CLB_RND 
-        |   OPB_RND argument_expression_list CLB_RND 
-        |   DOT postfix_expression
-        |   (INCREMENT | DECREMENT)
-        )*
+	:   primary_expression 
+            ((INCREMENT | DECREMENT)? | //primary expression must be int
+            (OPB_RND argument_expression_list? CLB_RND )? //primary expression must be method
+            (DOT postfix_expression)?)//primary expression must be class, or method call non-void
 	;
 
 
 primary_expression
 	: IDENTIFIER
 	| constant
-	| OPB_RND expression CLB_RND
+	| OPB_RND assignment_expression CLB_RND
 	;
 
 constant
@@ -129,18 +126,13 @@ constant
     ;
 
 /////
-
-expression
-	: assignment_expression (COMMA expression)
-	;
-
 assignment_expression
 	: unary_expression assignment_operator assignment_expression
 	| conditional_expression
 	;
 
 conditional_expression
-	: logical_or_expression (QUESTION expression DOUBLE_DOT conditional_expression)?
+	: logical_or_expression (QUESTION assignment_expression DOUBLE_DOT conditional_expression)?
 	;
 
 logical_or_expression
@@ -191,24 +183,24 @@ compound_statement
 
 expression_statement
 	: SEMICOLON
-	| expression SEMICOLON
+	| assignment_expression SEMICOLON
 	;
 
 selection_statement
-	: IF OPB_RND expression CLB_RND statement (ELSE statement)?
+	: IF OPB_RND assignment_expression CLB_RND statement (ELSE statement)?
 	;
 
 iteration_statement
-	: WHILE OPB_RND expression CLB_RND statement
-	| DO statement WHILE OPB_RND expression CLB_RND SEMICOLON
-	| FOR OPB_RND expression_statement expression_statement expression? CLB_RND statement
+	: WHILE OPB_RND assignment_expression CLB_RND statement
+	| DO statement WHILE OPB_RND assignment_expression CLB_RND SEMICOLON
+	| FOR OPB_RND expression_statement expression_statement assignment_expression? CLB_RND statement
 	;
 
 jump_statement
 	: CONTINUE SEMICOLON
 	| BREAK SEMICOLON
 	| RETURN SEMICOLON
-	| RETURN expression SEMICOLON
+	| RETURN assignment_expression SEMICOLON
 	;
 
 

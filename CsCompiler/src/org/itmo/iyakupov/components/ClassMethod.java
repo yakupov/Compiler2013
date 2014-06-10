@@ -35,6 +35,8 @@ public class ClassMethod implements GenerableCode {
 			log.trace("Constructor added");
 		}
 		
+		symbolTable.newBlock();
+		
 		for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_declaration_specifier) {
 				declarationSpecifier = new DeclarationSpecifier(child, symbolTable);
@@ -62,6 +64,8 @@ public class ClassMethod implements GenerableCode {
 				block = new CompoundStatement(child, symbolTable, errorProcessor);
 			}
 		}
+		
+		symbolTable.endBlock(tree.getStart().getLine());
 	}
 
 	public String getName() {

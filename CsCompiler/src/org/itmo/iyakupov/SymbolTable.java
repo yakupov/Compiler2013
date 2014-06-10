@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.itmo.iyakupov.components.Variable;
 
@@ -61,10 +62,9 @@ public class SymbolTable {
     }
 
     public void addVariable(Variable Variable) {
-    	/*
         String name = Variable.getName();
         Map<String, Symbol> block = symbolTable.get(blockIndex());
-        if (block.containsKey(name) || systemCalls.isSystemCall(name)) {
+        if (block.containsKey(name)  ){ //|| systemCalls.isSystemCall(name)) { //TODO
             errors.fail(Variable.getLine(), String.format("Duplicated variable: %s", name));
         }
         block.put(name, new VariableSymbol(Variable));
@@ -72,7 +72,6 @@ public class SymbolTable {
             Map<String, Integer> table = name2StackId.get(blockIndex());
             table.put(name, table.size());
         }
-        */
     }
 
     public int getVariableId(Variable Variable, int line) {
@@ -134,17 +133,11 @@ public class SymbolTable {
     }
 
     public Variable getVariable(String name, int line) {
-		return null;
-    	/*
         for (int i = blockIndex(); i >= 0; --i) {
-            Optional<Symbol> optional = symbolTable.get(i).entrySet().stream()
-                    .filter(entry -> entry.getKey().equals(name))
-                    .filter(entry -> entry.getValue() instanceof VariableSymbol)
-                    .map(entry -> entry.getValue())
-                    .findFirst();
-            if (optional.isPresent()) {
-                return (Variable) optional.get().getCode();
-            }
+        	for (Entry<String, Symbol> e : symbolTable.get(i).entrySet()) {
+        		if (e.getKey().equals(name) && e.getValue() instanceof VariableSymbol)
+                    return (Variable) e.getValue().getCode();
+        	}
         }
         SymbolTable globalSymbolTable = getGlobalSymbolTable();
         if (globalSymbolTable != this) {
@@ -152,7 +145,6 @@ public class SymbolTable {
         }
         errors.fail(line, String.format("Can not find variable: %s", name));
         return null;
-        */
     }
 
     private int blockIndex() {

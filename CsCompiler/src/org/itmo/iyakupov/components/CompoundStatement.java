@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsParser;
+import org.itmo.iyakupov.components.expr.Expression;
 
 public class CompoundStatement {
 	private final Log log = LogFactory.getLog(getClass());
@@ -24,6 +25,7 @@ public class CompoundStatement {
 		
 		for (ParserRuleContext child: tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_declaration) {
+				log.trace("Decl in da block: " + child.getText());
 				ParserRuleContext declarationSpecifier = null;
 				for (ParserRuleContext details : child.getRuleContexts(ParserRuleContext.class)) {
 					if (details.getRuleIndex() == CsParser.RULE_declaration_specifier) {
@@ -40,6 +42,12 @@ public class CompoundStatement {
 				}
 			} else if (child.getRuleIndex() == CsParser.RULE_statement) {
 				log.trace("stmt in da block: " + child.getText());
+				//FIXME
+				if (child.getRuleContext(ParserRuleContext.class, 0).getRuleIndex() == CsParser.RULE_expression_statement) {
+					new Expression(child.getRuleContext(ParserRuleContext.class, 0).getRuleContext(ParserRuleContext.class, 0),
+							errorProcessor, 
+							symbolTable);
+				}
 			}
 		}
 	}

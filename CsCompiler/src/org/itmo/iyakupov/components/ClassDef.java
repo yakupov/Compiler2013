@@ -46,6 +46,8 @@ public class ClassDef implements GenerableCode {
 		name = identifiers.get(0).getText();
 		log.trace("Class name: " + name);
 		
+		symbolTable.newBlock();
+		
 		//Fields and methods
 		for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_cls_method) {
@@ -67,6 +69,8 @@ public class ClassDef implements GenerableCode {
 				}
 			}
 		}
+
+		symbolTable.endBlock(tree.getStart().getLine());
 
 	}
 	

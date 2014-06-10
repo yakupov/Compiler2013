@@ -17,19 +17,6 @@ public class CsBaseListener implements CsListener {
 	 * <p/>
 	 * The default implementation does nothing.
 	 */
-	@Override public void enterExpression(@NotNull CsParser.ExpressionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
-	@Override public void exitExpression(@NotNull CsParser.ExpressionContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 * <p/>
-	 * The default implementation does nothing.
-	 */
 	@Override public void enterInclusive_or_expression(@NotNull CsParser.Inclusive_or_expressionContext ctx) { }
 	/**
 	 * {@inheritDoc}
