@@ -25,14 +25,14 @@ final class IDExpressionType extends ExpressionType {
 	public void process() {
 		varName = tree.getText();
 		varDef = symbolTable.getVariable(varName, tree.getStart().getLine());
-		errors.assertTrue(getVarDef() != null, tree.getStart().getLine(), "Cannot find variable : " + varName);
+		errors.assertTrue(getVariable() != null, tree.getStart().getLine(), "Cannot find variable : " + varName);
 	}
 
 	@Override
 	public void writeCode(CodeWriter writer) {
 		if (symbolTable.isGlobalVar(varName, tree.getStart().getLine())) {
 			writer.println("getstatic Main/%s %s", varName,
-					getVarDef().getType().getDescriptor());
+					getVariable().getType().getDescriptor());
 		} else {
 			writer.println("%s %s", getType().load(), symbolTable.getVariableId(varName, tree.getStart().getLine()));
 		}
@@ -40,10 +40,10 @@ final class IDExpressionType extends ExpressionType {
 
 	@Override
 	public Type getType() {
-		if (getVarDef() == null) {
+		if (getVariable() == null) {
 			throw new IllegalStateException("process() was not called : " + tree.getStart().getLine());
 		}
-		return getVarDef().getType();
+		return getVariable().getType();
 	}
 
 	@Override
@@ -51,7 +51,7 @@ final class IDExpressionType extends ExpressionType {
 		return true;
 	}
 
-	public Variable getVarDef() {
+	public Variable getVariable() {
 		return varDef;
 	}
 }

@@ -122,7 +122,7 @@ public enum Type {
 
         @Override
         public String store() {
-            return "atore";
+            return "astore";
         }
     };
 

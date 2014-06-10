@@ -11,9 +11,9 @@ import org.itmo.iyakupov.components.Variable;
 public abstract class LValueAssignExpressionType extends ExpressionType {
     Expression expression1;
     Expression expression2;
-	private ErrorProcessor errors;
-	private SymbolTable symbolTable;
-	private ParserRuleContext tree;
+	protected ErrorProcessor errors;
+	protected SymbolTable symbolTable;
+	protected ParserRuleContext tree;
 
     public LValueAssignExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
         super(lexemType);
@@ -32,9 +32,9 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
 
     @Override
     public void process() {
-        errors.assertEquals(2, tree.getChildCount(), tree.getStart().getLine(), "LValueAssign");
+        errors.assertEquals(3, tree.getChildCount(), tree.getStart().getLine(), "LValueAssign");
         expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 1), errors, symbolTable);
+        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, symbolTable);
         expression1.getExpressionType().process();
         expression2.getExpressionType().process();
         errors.assertTrue(expression1.isLValue(), tree.getStart().getLine(),
@@ -52,7 +52,6 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
         writer.println(byteCode());
         writer.println("dup");
         Variable varDef = expression1.getLValueVariable();
-        //assignToVariable(writer, varDef);
         writer.println("%s %s", getType().store(), symbolTable.getVariableId(varDef, tree.getStart().getLine()));
     }
 

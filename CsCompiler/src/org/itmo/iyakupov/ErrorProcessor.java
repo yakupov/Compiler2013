@@ -5,13 +5,13 @@ import org.apache.commons.logging.LogFactory;
 
 public class ErrorProcessor {
 	private final Log log = LogFactory.getLog(getClass());
-	private final boolean throwEx = true;
+	private final boolean throwOnFailedAss = true;
 	
 	public void assertEquals(int i, int j, int line, String string) {
 		if (i != j) {
 			String errMsg = line + " : assertion failed (!=). Text: " + string;
 			log.error(errMsg);
-			if (throwEx)
+			if (throwOnFailedAss)
 				throw new RuntimeException(errMsg);
 		}
 	}
@@ -20,7 +20,7 @@ public class ErrorProcessor {
 		if (!b) {
 			String errMsg = line + " : assertion failed (false). Text: " + string;
 			log.error(errMsg);
-			if (throwEx)
+			if (throwOnFailedAss)
 				throw new RuntimeException(errMsg);
 		}
 	}

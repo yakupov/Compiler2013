@@ -6,7 +6,6 @@ import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.SymbolTable;
 
 public abstract class LogicalOperationExpressionType extends BinaryOperationExpressionType {
-
     public LogicalOperationExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
         super(lexemType, errors, symbolTable, tree);
     }

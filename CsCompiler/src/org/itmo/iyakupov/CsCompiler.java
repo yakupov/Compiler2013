@@ -65,7 +65,8 @@ public class CsCompiler {
 		log.info(level + "; " + p.getRuleNames()[tree.getRuleIndex()] + "; " + tree.getText());
 		log.info("\t " + tree.toInfoString(p));
 
-		new ClassDef(tree, new SymbolTable());
+		ErrorProcessor ep = new ErrorProcessor();
+		new ClassDef(tree, new SymbolTable(ep), ep);
 		//System.err.println("\t " + tree.getTokens(CsLexer.CLASS).size());
 		//System.err.println("\t " + tree.getTokens(CsLexer.ACCESS_MODIFIER).size());
 		//System.err.println("\t " + tree.getTokens(CsLexer.IDENTIFIER).size());

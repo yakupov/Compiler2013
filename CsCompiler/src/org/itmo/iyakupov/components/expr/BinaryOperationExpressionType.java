@@ -20,16 +20,15 @@ public abstract class BinaryOperationExpressionType extends ExpressionType {
         this.symbolTable = symbolTable;
         this.tree = tree;
     }
-   
 
     public abstract String operation();
     public abstract String byteCode();
 
     @Override
     public void process() {
-        errors.assertEquals(2, tree.getChildCount(), tree.getStart().getLine(), "LValueAssign");
+        errors.assertEquals(3, tree.getChildCount(), tree.getStart().getLine(), "BinOp");
         expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 1), errors, symbolTable);
+        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, symbolTable);
         expression1.getExpressionType().process();
         expression2.getExpressionType().process();
         errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
