@@ -4,25 +4,24 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.SymbolTable;
 import org.itmo.iyakupov.a4autogen.CsParser;
-import org.itmo.iyakupov.components.common.DeclarationSpecifier;
 import org.itmo.iyakupov.components.expr.Expression;
+import org.itmo.iyakupov.scope.TranslateScope;
+import org.objectweb.asm.Type;
 
-public class Variable implements GenerableCode {
+public class Variable  {
 	private final Log log = LogFactory.getLog(getClass());
 	protected String initOperator; //unused maybe
-	protected SymbolTable symbolTable;
+	protected TranslateScope scope;
 	protected Expression initExpression;
 	protected String name;
 	protected DeclarationSpecifier declarationSpecifier;
 	protected final int line;
 
 	public Variable(ParserRuleContext tree, ParserRuleContext declarationSpecifierTree, 
-			SymbolTable st, ErrorProcessor errorProcessor) {
-		this.symbolTable = st;
+			TranslateScope st, ErrorProcessor errorProcessor) {
+		this.scope = st;
 		declarationSpecifier = new DeclarationSpecifier(declarationSpecifierTree, st);
 		line = tree.getStart().getLine();
 		
@@ -39,11 +38,12 @@ public class Variable implements GenerableCode {
 				if (tToken != null)
 					initOperator = tToken.getText();
 			} else if (child.getRuleIndex() == CsParser.RULE_assignment_expression) {
-				initExpression = new Expression(child, errorProcessor, symbolTable);
+				initExpression = new Expression(child, errorProcessor, scope);
 			}
 		}
 		
-		symbolTable.addVariable(this);
+		scope.addLocalVariable(name, declarationSpecifier.type);
+		//scope.addVariable(this); //FIXME
 	}
 
 	
@@ -59,10 +59,8 @@ public class Variable implements GenerableCode {
 		return name;
 	}
 	
-	@Override
-	public void writeCode(CodeWriter writer) {
-		// TODO Auto-generated method stub
-		
+	public Expression getInitExpression() {
+		return initExpression;
 	}
 	
 	public int getLine() {

@@ -1,17 +1,17 @@
 package org.itmo.iyakupov.components.expr;
 
+import org.itmo.iyakupov.MethodResident;
 import org.itmo.iyakupov.a4autogen.CsLexer;
-import org.itmo.iyakupov.components.GenerableCode;
-import org.itmo.iyakupov.components.Type;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
-public abstract class ExpressionType implements GenerableCode{
+public abstract class ExpressionType implements Opcodes, MethodResident {
 	protected final int lexemType;
 
 	public ExpressionType(int lexemType) {
 		this.lexemType = lexemType;
 	}
 
-	public abstract void process();
 	public abstract Type getType();
 
 	public boolean isLValue() {
@@ -29,5 +29,9 @@ public abstract class ExpressionType implements GenerableCode{
 				lexemType == CsLexer.RSHIFT_ASS ||
 				lexemType == CsLexer.INCREMENT ||
 				lexemType == CsLexer.DECREMENT;
+	}
+	
+	public static boolean isPrimitiveType(Type type) {
+		return type.getSort() < 10;
 	}
 }

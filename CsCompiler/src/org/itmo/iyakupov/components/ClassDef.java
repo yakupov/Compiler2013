@@ -7,26 +7,34 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.itmo.iyakupov.CodeWriter;
-import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.SymbolTable;
-import org.itmo.iyakupov.a4autogen.CsParser;
 
-public class ClassDef implements GenerableCode {
+import org.itmo.iyakupov.CompilationUnit;
+import org.itmo.iyakupov.ErrorProcessor;
+import org.itmo.iyakupov.a4autogen.CsParser;
+import org.itmo.iyakupov.components.expr.Expression;
+import org.itmo.iyakupov.components.expr.ExpressionType;
+import org.itmo.iyakupov.scope.TranslateScope;
+
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
 	private final Log log = LogFactory.getLog(getClass());
 	
 	protected final ParserRuleContext tree;
-	protected final SymbolTable symbolTable;
+	protected final TranslateScope scope;
 	protected final List<TerminalNode> accessModifiers;
 	protected final List<TerminalNode> otherModifiers;
 	protected final String name;
-	protected final ArrayList<Variable> fields = new ArrayList<Variable>();
-	protected final ArrayList<ClassMethod> methods = new ArrayList<ClassMethod>();
+	protected final List<Variable> fields = new ArrayList<Variable>();
+	protected final List<ClassMethod> methods = new ArrayList<ClassMethod>();
 	protected final ErrorProcessor errorProcessor;
 	
-	public ClassDef(ParserRuleContext tree, SymbolTable symbolTable, ErrorProcessor errorProcessor) {
+	public ClassDef(ParserRuleContext tree, TranslateScope scope, ErrorProcessor errorProcessor) {
 		this.tree = tree;
-		this.symbolTable = symbolTable;
+		this.scope = scope;
 		this.errorProcessor = errorProcessor;
 		
 		if (tree.getRuleIndex() != CsParser.RULE_cls_def) {
@@ -46,12 +54,12 @@ public class ClassDef implements GenerableCode {
 		name = identifiers.get(0).getText();
 		log.trace("Class name: " + name);
 		
-		symbolTable.newBlock();
+		// scope.newBlock(); // FIXME
 		
 		//Fields and methods
 		for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_cls_method) {
-				methods.add(new ClassMethod(child, symbolTable, this, errorProcessor));
+				methods.add(new ClassMethod(child, scope, this, errorProcessor));
 			} else if (child.getRuleIndex() == CsParser.RULE_declaration) {
 				ParserRuleContext declarationSpecifier = null;
 				for (ParserRuleContext details : child.getRuleContexts(ParserRuleContext.class)) {
@@ -62,7 +70,7 @@ public class ClassDef implements GenerableCode {
 					} else if (details.getRuleIndex() == CsParser.RULE_init_declarator_list) {
 						for (ParserRuleContext declarator : details.getRuleContexts(ParserRuleContext.class)) {
 							if (declarator.getRuleIndex() == CsParser.RULE_init_declarator) {
-								fields.add(new Variable(declarator, declarationSpecifier, symbolTable, errorProcessor));							
+								fields.add(new Variable(declarator, declarationSpecifier, scope, errorProcessor));							
 							}
 						}
 					}
@@ -70,16 +78,54 @@ public class ClassDef implements GenerableCode {
 			}
 		}
 
-		symbolTable.endBlock(tree.getStart().getLine());
+		// scope.endBlock(tree.getStart().getLine()); //FIXME
 
+	}
+
+	private void assignToVariable(MethodVisitor mv, Variable v) {
+		if (ExpressionType.isPrimitiveType(v.getType())) {
+			//mv.visitVarInsn(ISTORE, scope.getLocalVariableIndex(v.getName()));
+			mv.visitFieldInsn(PUTFIELD, name, v.getName(), v.getType().getDescriptor());
+		} else {
+			mv.visitVarInsn(ASTORE, scope.getLocalVariableIndex(v.getName()));
+		}
 	}
 	
 	@Override
-	public void writeCode(CodeWriter cw) {
-		// TODO Auto-generated method stub
-		
-		symbolTable.newBlock();
+	public byte[] compile() {
+        // class header
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        cw.visit(V1_6, ACC_PUBLIC, name, null, "java/lang/Object", new String[] {});
 
-		symbolTable.endBlock(tree.getStart().getLine());
+        //Fields
+        for (Variable v: fields) {
+        	FieldVisitor fv = cw.visitField(ACC_PUBLIC, 
+        			v.getName(), 
+        			v.getType().getDescriptor(),
+        			null, 
+        			null);
+        	fv.visitEnd();
+        }
+        
+        // default public constructor
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null,
+                null);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+        for (Variable v: fields) {
+        	if (v.getInitExpression() != null) {
+        		v.getInitExpression().compile(mv);
+        		assignToVariable(mv, v);
+        	}
+        }
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
+		
+        for (ClassMethod m : methods) {
+        	m.compile(cw, name, fields);
+        }
+             
+        return cw.toByteArray();
 	}
 }

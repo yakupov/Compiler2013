@@ -1,49 +1,44 @@
 package org.itmo.iyakupov.components.expr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.itmo.iyakupov.CodeWriter;
+import org.itmo.iyakupov.CompileException;
 import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.SymbolTable;
-import org.itmo.iyakupov.components.Type;
 import org.itmo.iyakupov.components.Variable;
+import org.itmo.iyakupov.scope.TranslateScope;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 final class IDExpressionType extends ExpressionType {
 	private String varName;
 	private Variable varDef;
 	private ErrorProcessor errors;
-	private SymbolTable symbolTable;
+	private TranslateScope scope;
 	private ParserRuleContext tree;
 
-	IDExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
+	IDExpressionType(int lexemType, ErrorProcessor errors, TranslateScope scope, ParserRuleContext tree) {
 		super(lexemType);
         this.errors = errors;
-        this.symbolTable = symbolTable;
+        this.scope = scope;
         this.tree = tree;
 	}
 
-	@Override
-	public void process() {
-		varName = tree.getText();
-		varDef = symbolTable.getVariable(varName, tree.getStart().getLine());
-		errors.assertTrue(getVariable() != null, tree.getStart().getLine(), "Cannot find variable : " + varName);
-	}
-
+/*
 	@Override
 	public void writeCode(CodeWriter writer) {
-		if (symbolTable.isGlobalVar(varName, tree.getStart().getLine())) {
+		if (scope.isGlobalVar(varName, tree.getStart().getLine())) {
 			writer.println("getstatic Main/%s %s", varName,
 					getVariable().getType().getDescriptor());
 		} else {
-			writer.println("%s %s", getType().load(), symbolTable.getVariableId(varName, tree.getStart().getLine()));
+			writer.println("%s %s", getType().load(), scope.getVariableId(varName, tree.getStart().getLine()));
 		}
 	}
-
+*/
 	@Override
 	public Type getType() {
-		if (getVariable() == null) {
+		if (getVariableName() == null) {
 			throw new IllegalStateException("process() was not called : " + tree.getStart().getLine());
 		}
-		return getVariable().getType();
+		return scope.getLocalVariableType(tree.getText());
 	}
 
 	@Override
@@ -51,7 +46,20 @@ final class IDExpressionType extends ExpressionType {
 		return true;
 	}
 
-	public Variable getVariable() {
-		return varDef;
+	public String getVariableName() {
+		return tree.getText();
+	}
+
+	@Override
+	public void compile(MethodVisitor mv) {
+		String var = tree.getText();
+        Type type;
+        if (scope.isLocalVariable(var)) {
+            type = scope.getLocalVariableType(var);
+            mv.visitVarInsn(ExpressionType.isPrimitiveType(type) ? ILOAD : ALOAD, scope.getLocalVariableIndex(var));
+        } else {
+            throw new CompileException(String.format("Variable %s not found in context %s.", var, tree.getText()));
+        }
+		
 	}
 }

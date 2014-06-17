@@ -1,29 +1,28 @@
 package org.itmo.iyakupov.components.expr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.SymbolTable;
-import org.itmo.iyakupov.components.Type;
-import org.itmo.iyakupov.components.TypeChecker;
 import org.itmo.iyakupov.components.Variable;
+import org.itmo.iyakupov.scope.TranslateScope;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 public abstract class LValueAssignExpressionType extends ExpressionType {
     Expression expression1;
     Expression expression2;
 	protected ErrorProcessor errors;
-	protected SymbolTable symbolTable;
+	protected TranslateScope scope;
 	protected ParserRuleContext tree;
 
-    public LValueAssignExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
+    public LValueAssignExpressionType(int lexemType, ErrorProcessor errors, TranslateScope scope, ParserRuleContext tree) {
         super(lexemType);
         this.errors = errors;
-        this.symbolTable = symbolTable;
+        this.scope = scope;
         this.tree = tree;
     }
 
     public abstract String operation();
-    public abstract String byteCode();
+    public abstract int opCode();
 
     @Override
     public boolean isLValue() {
@@ -31,32 +30,29 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
     }
 
     @Override
-    public void process() {
+    public void compile(MethodVisitor mv) {
         errors.assertEquals(3, tree.getChildCount(), tree.getStart().getLine(), "LValueAssign");
-        expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, symbolTable);
-        expression1.getExpressionType().process();
-        expression2.getExpressionType().process();
-        errors.assertTrue(expression1.isLValue(), tree.getStart().getLine(),
-                String.format("LValue is required: %s", operation()));
-        errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
-                String.format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
-    }
+        expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
 
-    @Override
-    public void writeCode(CodeWriter writer) {
-        writer.writeComment(operation());
-        expression1.writeCode(writer);
-        expression2.writeCode(writer);
-        writer.writeComment("operation " + operation());
-        writer.println(byteCode());
-        writer.println("dup");
-        Variable varDef = expression1.getLValueVariable();
-        writer.println("%s %s", getType().store(), symbolTable.getVariableId(varDef, tree.getStart().getLine()));
+    	expression1.compile(mv);
+    	expression2.compile(mv);
+    	mv.visitInsn(opCode());
+    	mv.visitInsn(DUP);
+        String varName = expression1.getLValueVariable();
+    	assignToVariable(mv, varName);
     }
-
+    
     @Override
     public Type getType() {
         return expression1.getType();
     }
+    
+	private void assignToVariable(MethodVisitor mv, String varName) {
+		if (ExpressionType.isPrimitiveType(getType())) {
+			mv.visitVarInsn(ISTORE, scope.getLocalVariableIndex(varName));
+		} else {
+			mv.visitVarInsn(ASTORE, scope.getLocalVariableIndex(varName));
+		}
+	}
 }

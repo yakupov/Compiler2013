@@ -5,7 +5,7 @@ import org.apache.commons.logging.LogFactory;
 
 public class ErrorProcessor {
 	private final Log log = LogFactory.getLog(getClass());
-	private final boolean throwOnFailedAss = true;
+	private final boolean throwOnFailedAss = false;
 	
 	public void assertEquals(int i, int j, int line, String string) {
 		if (i != j) {

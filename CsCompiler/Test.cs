@@ -1,5 +1,7 @@
 public class Test
 {
+   int tst = 555;
+  /* 
    private int xxx = 1, yyy;
    private int zzz = yyy = 123;
    
@@ -10,4 +12,5 @@ public class Test
       System.Console.WriteLine("Hello, World!");
       a = 6;
    }
+   */
 }

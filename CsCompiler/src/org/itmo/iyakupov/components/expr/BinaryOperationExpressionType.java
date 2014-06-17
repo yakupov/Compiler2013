@@ -1,48 +1,40 @@
 package org.itmo.iyakupov.components.expr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.SymbolTable;
-import org.itmo.iyakupov.components.Type;
-import org.itmo.iyakupov.components.TypeChecker;
+import org.itmo.iyakupov.scope.TranslateScope;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 public abstract class BinaryOperationExpressionType extends ExpressionType {
 	protected Expression expression1;
 	protected Expression expression2;
     protected ErrorProcessor errors;
-	protected SymbolTable symbolTable;
+	protected TranslateScope scope;
 	protected ParserRuleContext tree;
 
-    public BinaryOperationExpressionType(int lexemType, ErrorProcessor errors, SymbolTable symbolTable, ParserRuleContext tree) {
+    public BinaryOperationExpressionType(int lexemType, ErrorProcessor errors, TranslateScope scope, ParserRuleContext tree) {
         super(lexemType);
         this.errors = errors;
-        this.symbolTable = symbolTable;
+        this.scope = scope;
         this.tree = tree;
     }
 
     public abstract String operation();
-    public abstract String byteCode();
+    public abstract int opCode();
+
 
     @Override
-    public void process() {
+    public void compile(MethodVisitor mv) {
         errors.assertEquals(3, tree.getChildCount(), tree.getStart().getLine(), "BinOp");
-        expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, symbolTable);
-        expression1.getExpressionType().process();
-        expression2.getExpressionType().process();
-        errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
-                String.format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
-    }
+        expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+        expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
 
-    @Override
-    public void writeCode(CodeWriter writer) {
-        expression1.writeCode(writer);
-        expression2.writeCode(writer);
-        writer.writeComment("operation " + operation());
-        writer.println(byteCode());
+    	expression1.compile(mv);
+    	expression2.compile(mv);
+    	mv.visitInsn(opCode());
     }
-
+    
     @Override
     public Type getType() {
         return expression1.getType();

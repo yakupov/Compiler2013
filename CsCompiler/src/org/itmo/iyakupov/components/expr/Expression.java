@@ -7,46 +7,60 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.itmo.iyakupov.CodeWriter;
 import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.SymbolTable;
+import org.itmo.iyakupov.MethodResident;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.a4autogen.CsParser;
-import org.itmo.iyakupov.components.GenerableCode;
-import org.itmo.iyakupov.components.Type;
-import org.itmo.iyakupov.components.TypeChecker;
 import org.itmo.iyakupov.components.Variable;
+import org.itmo.iyakupov.scope.Scope;
+import org.itmo.iyakupov.scope.TranslateScope;
 
-public class Expression implements GenerableCode {
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
+public class Expression implements Opcodes, MethodResident {
 	private final Log log = LogFactory.getLog(getClass());
 
 	private final ParserRuleContext tree;
-	private final SymbolTable symbolTable;
+	private final TranslateScope scope;
 	private final ErrorProcessor errors;
 	private final ExpressionType expressionType;
 	private final Map<Integer, ExpressionType> expressionTypeByToken;
 
-	public Expression(ParserRuleContext tree, ErrorProcessor errors, SymbolTable symbolTable) {
+	public Expression(ParserRuleContext tree, ErrorProcessor errors, TranslateScope scope) {
 		this.tree = tree;
 		this.errors = errors;
-		this.symbolTable = symbolTable;
+		this.scope = scope;
 		this.expressionTypeByToken = new HashMap<Integer, ExpressionType>();
 		createExpressionTypes();
 		expressionType = determineExpressionType(tree);
-		expressionType.process();
+		//expressionType.process(); //FIXME
 
 		log.trace("Expression added: " + CsLexer.ruleNames[expressionType.lexemType - 1]);
 		log.trace("Token: " + CsParser.tokenNames[expressionType.lexemType]);
-
+		log.trace("ExpressionType: " + expressionType.getClass().getName());
+		log.trace("Expression text: " + tree.getText());
 	}
-
-	private void assignToVariable(CodeWriter writer, Variable varDef) {
-		if (symbolTable.isGlobalVar(varDef, tree.getStart().getLine())) {
+	/*
+	private void assignToVariable(CodeWriter writer, String varName) {
+		if (scope.isGlobalVar(varDef, tree.getStart().getLine())) {
 			writer.println("putstatic Main/%s %s", varDef.getName(), varDef.getType().getDescriptor());
 		} else {
-			writer.println("%s %s", getType().store(), symbolTable.getVariableId(varDef, tree.getStart().getLine()));
+			writer.println("%s %s", getType().store(), scope.getVariableId(varDef, tree.getStart().getLine()));
 		}
 	}
+	 */
+
+	private void assignToVariable(MethodVisitor mv, String varName) {
+		if (ExpressionType.isPrimitiveType(getType())) {
+			mv.visitVarInsn(ISTORE, scope.getLocalVariableIndex(varName));
+		} else {
+			mv.visitVarInsn(ASTORE, scope.getLocalVariableIndex(varName));
+		}
+	}
+
 
 	public boolean isLValue() {
 		return expressionType.isLValue();
@@ -55,17 +69,26 @@ public class Expression implements GenerableCode {
 	public Type getType() {
 		return expressionType.getType();
 	}
-
+	/*
 	@Override
-	public void writeCode(CodeWriter writer) {
+	@Deprecated
+	public void compile(MethodVisitor mv) {
 		if (expressionType != null) {
 			expressionType.process();
 		} else {
 			errors.assertTrue(false, tree.getStart().getLine(), "Cannot find value in map");
 			return;
 		}
-		expressionType.writeCode(writer);
+		expressionType.compile(mv);
 	}
+	 */
+
+	@Override
+	public void compile(MethodVisitor mv) { //Exp in method
+		expressionType.compile(mv);
+
+	}
+
 
 	private Expression getLValueVariableExpr() {
 		errors.assertTrue(isLValue(), tree.getStart().getLine(), "LValue is expected");
@@ -75,8 +98,8 @@ public class Expression implements GenerableCode {
 		return ((LValueAssignExpressionType) expressionType).expression1.getLValueVariableExpr();
 	}
 
-	public Variable getLValueVariable() {
-		return ((IDExpressionType) getLValueVariableExpr().expressionType).getVariable();
+	public String getLValueVariable() {
+		return ((IDExpressionType) getLValueVariableExpr().expressionType).getVariableName();
 	}
 
 	public ExpressionType getExpressionType() {
@@ -150,7 +173,7 @@ public class Expression implements GenerableCode {
 		case CsParser.RULE_postfix_expression: {
 			if (tree.getChildCount() == 1)
 				return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
-			return new PostfixExpression(tree, symbolTable, errors);
+			return new PostfixExpression(tree, scope, errors);
 		}
 		case CsParser.RULE_primary_expression: {
 			if (tree.getChildCount() == 1) {
@@ -165,10 +188,10 @@ public class Expression implements GenerableCode {
 		case CsParser.RULE_constant: {
 			if (tree.getChildCount() == 1)
 				return expressionTypeByToken.get(((TerminalNode)(tree.getChild(0))).getSymbol().getType());
-			return new PostfixExpression(tree, symbolTable, errors);
+			return new PostfixExpression(tree, scope, errors);
 		}
 		case CsParser.RULE_constructor_call: {
-			return new ConstructorExpression(tree, symbolTable, errors);
+			return new ConstructorExpression(tree, scope, errors);
 		}
 		}	
 
@@ -186,40 +209,31 @@ public class Expression implements GenerableCode {
 			private String value;
 
 			@Override
-			public void process() {
+			public void compile(MethodVisitor mv) {
 				value = tree.getText();
-			}
-
-			@Override
-			public void writeCode(CodeWriter writer) {
-				writer.push(value);
-				writer.println("invokestatic syscall/SysCall/string(Ljava/lang/String;)[C");
+				mv.visitLdcInsn(value);
 			}
 
 			@Override
 			public Type getType() {
-				return Type.STRING;
+				return Type.getType(String.class);
 			}
 		});
 		expressionTypeByToken.put(CsLexer.DECIMAL_LITERAL, new ExpressionType(CsLexer.DECIMAL_LITERAL) {
 			private String value;
 
 			@Override
-			public void process() {
+			public void compile(MethodVisitor mv) {
 				value = tree.getText();
-			}
-
-			@Override
-			public void writeCode(CodeWriter writer) {
-				writer.println("sipush %s", value);
+				mv.visitLdcInsn(Integer.parseInt(value));
 			}
 
 			@Override
 			public Type getType() {
-				return Type.INT;
+				return Type.INT_TYPE;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.IDENTIFIER, new IDExpressionType(CsLexer.IDENTIFIER, errors, symbolTable, tree));
+		expressionTypeByToken.put(CsLexer.IDENTIFIER, new IDExpressionType(CsLexer.IDENTIFIER, errors, scope, tree));
 
 		/*
 		 * UNARY
@@ -228,17 +242,11 @@ public class Expression implements GenerableCode {
 			private Expression expression;
 
 			@Override
-			public void process() {
+			public void compile(MethodVisitor mv) {
 				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "-");
-				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-				expression.expressionType.process();
-			}
-
-			@Override
-			public void writeCode(CodeWriter writer) {
-				expression.writeCode(writer);
-				writer.writeComment("operation -");
-				writer.println("ineg");
+				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression.compile(mv);
+				mv.visitInsn(INEG);
 			}
 
 			@Override
@@ -255,21 +263,13 @@ public class Expression implements GenerableCode {
 			private Expression expression;
 
 			@Override
-			public void process() {
+			public void compile(MethodVisitor mv) {
 				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_INC");
-				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-				expression.expressionType.process();
-			}
-
-			@Override
-			public void writeCode(CodeWriter writer) {
-				expression.writeCode(writer);
-				writer.writeComment("operation p++");
-				writer.println("dup");
-				writer.println("iconst_1");
-				writer.println("iadd");
-				Variable varDef = expression.getLValueVariable();
-				assignToVariable(writer, varDef);
+				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression.compile(mv);
+				mv.visitInsn(IINC);
+				String varName = expression.getLValueVariable();
+				assignToVariable(mv, varName);
 			}
 
 			@Override
@@ -287,22 +287,17 @@ public class Expression implements GenerableCode {
 		});
 		expressionTypeByToken.put(CsLexer.DECREMENT, new ExpressionType(CsLexer.DECREMENT) {
 			private Expression expression;
-			@Override
-			public void process() {
-				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_DEC");
-				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-				expression.expressionType.process();
-			}
 
 			@Override
-			public void writeCode(CodeWriter writer) {
-				expression.writeCode(writer);
-				writer.writeComment("operation p--");
-				writer.println("dup");
-				writer.println("iconst_1");
-				writer.println("isub");
-				Variable varDef = expression.getLValueVariable();
-				assignToVariable(writer, varDef);
+			public void compile(MethodVisitor mv) {
+				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_DEC");
+				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression.compile(mv);
+				mv.visitInsn(DUP);
+				mv.visitInsn(ICONST_1);
+				mv.visitInsn(ISUB);
+				String varName = expression.getLValueVariable();
+				assignToVariable(mv, varName);
 			}
 
 			@Override
@@ -327,24 +322,16 @@ public class Expression implements GenerableCode {
 			private Expression expression2;
 
 			@Override
-			public void process() {
-				errors.assertEquals(3, tree.getChildCount(), tree.getStart().getLine(), "ASSIGN : " + tree.getChildCount());
-				expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, symbolTable);
-				expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, symbolTable);
-				expression1.expressionType.process();
-				expression2.expressionType.process();
-				errors.assertTrue(expression1.isLValue(), tree.getStart().getLine(), "Left value is required");
-				errors.assertTrue(expression1.getType() != Type.VOID, tree.getStart().getLine(), "Cannot assign value to void");
-				errors.assertTrue(TypeChecker.typeCheck(expression1, expression2), tree.getStart().getLine(),
-						String.format("Cannot cast %s to %s", expression2.getType(), expression1.getType()));
-			}
-
-			@Override
-			public void writeCode(CodeWriter writer) {
-				expression2.writeCode(writer);
-				Variable varDef = expression1.getLValueVariable();
-				assignToVariable(writer, varDef);
-				expression1.writeCode(writer);
+			public void compile(MethodVisitor mv) {
+				expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
+				
+				expression2.compile(mv);
+				String varName = expression1.getLValueVariable();
+				if (varName == null)
+					throw new RuntimeException("Null lvalue variable in assign");
+				assignToVariable(mv, varName);
+				expression1.compile(mv);
 			}
 
 			@Override
@@ -357,334 +344,343 @@ public class Expression implements GenerableCode {
 				return true;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.MUL_ASS, new LValueAssignExpressionType(CsLexer.MUL_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.MUL_ASS, new LValueAssignExpressionType(CsLexer.MUL_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "*=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "imul";
+			public int opCode() {
+				return IMUL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.DIV_ASS, new LValueAssignExpressionType(CsLexer.DIV_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.DIV_ASS, new LValueAssignExpressionType(CsLexer.DIV_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "/=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "idiv";
+			public int opCode() {
+				return IDIV;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.REM_ASS, new LValueAssignExpressionType(CsLexer.REM_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.REM_ASS, new LValueAssignExpressionType(CsLexer.REM_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "%=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "irem";
+			public int opCode() {
+				return IREM;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.ADD_ASS, new LValueAssignExpressionType(CsLexer.ADD_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.ADD_ASS, new LValueAssignExpressionType(CsLexer.ADD_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "+=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "iadd";
+			public int opCode() {
+				return IADD;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.SUB_ASS, new LValueAssignExpressionType(CsLexer.SUB_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.SUB_ASS, new LValueAssignExpressionType(CsLexer.SUB_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "-=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "imun";
+			public int opCode() {
+				return ISUB;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LSHIFT_ASS, new LValueAssignExpressionType(CsLexer.LSHIFT_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.LSHIFT_ASS, new LValueAssignExpressionType(CsLexer.LSHIFT_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "<<=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ishl";
+			public int opCode() {
+				return ISHL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.RSHIFT_ASS, new LValueAssignExpressionType(CsLexer.RSHIFT_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.RSHIFT_ASS, new LValueAssignExpressionType(CsLexer.RSHIFT_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return ">>=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ishr";
+			public int opCode() {
+				return ISHR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.AND_ASS, new LValueAssignExpressionType(CsLexer.AND_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.AND_ASS, new LValueAssignExpressionType(CsLexer.AND_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "&=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "iand";
+			public int opCode() {
+				return IAND;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.OR_ASS, new LValueAssignExpressionType(CsLexer.OR_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.OR_ASS, new LValueAssignExpressionType(CsLexer.OR_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "|=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ior";
+			public int opCode() {
+				return IOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.XOR_ASS, new LValueAssignExpressionType(CsLexer.XOR_ASS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.XOR_ASS, new LValueAssignExpressionType(CsLexer.XOR_ASS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "^=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ixor";
+			public int opCode() {
+				return IXOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.OR, new LogicalOperationExpressionType(CsLexer.OR, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.OR, new ExpressionType(CsLexer.OR) {
+			Expression e1;
+			Expression e2;
+
 			@Override
-			public String operation() {
-				return "||";
+			public void compile(MethodVisitor mv) {
+				e1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				e2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
+
+				// compiles e1
+				e1.compile(mv);
+				// tests if e1 is true
+				mv.visitInsn(DUP);
+				Label end = new Label();
+				mv.visitJumpInsn(IFNE, end);
+				// case where e1 is false : e1 || e2 is equal to e2
+				mv.visitInsn(POP);
+				e2.compile(mv);
+				// if e1 is true, e1 || e2 is equal to e1:
+				// we jump directly to this label, without evaluating e2
+				mv.visitLabel(end);
 			}
 
 			@Override
-			public String byteCode() {
-				return "ifne";
-			}
-
-			@Override
-			public String firstTrue() {
-				return "iconst_0";
-			}
-
-			@Override
-			public String secondTrue() {
-				return "iconst_1";
+			public Type getType() {
+				return e1.getType();
 			}
 		});
-		expressionTypeByToken.put(CsLexer.AND, new LogicalOperationExpressionType(CsLexer.AND, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.AND, new ExpressionType(CsLexer.AND) {
+			Expression e1;
+			Expression e2;
+
 			@Override
-			public String operation() {
-				return "&&";
+			public void compile(MethodVisitor mv) {
+				e1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				e2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
+				e1.compile(mv);
+				mv.visitInsn(DUP);
+				Label end = new Label();
+				mv.visitJumpInsn(IFEQ, end);
+				mv.visitInsn(POP);
+				e2.compile(mv);
+				mv.visitLabel(end);
 			}
 
 			@Override
-			public String byteCode() {
-				return "ifeq";
-			}
-
-			@Override
-			public String firstTrue() {
-				return "iconst_1";
-			}
-
-			@Override
-			public String secondTrue() {
-				return "iconst_0";
+			public Type getType() {
+				return e1.getType();
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.LSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "<<";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ishl";
+			public int opCode() {
+				return ISHL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.RSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.RSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return ">>";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ishr";
+			public int opCode() {
+				return ISHR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.PLUS, new BinaryOperationExpressionType(CsLexer.PLUS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.PLUS, new BinaryOperationExpressionType(CsLexer.PLUS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "+";
 			}
 
 			@Override
-			public String byteCode() {
-				return "iadd";
+			public int opCode() {
+				return IADD;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.MINUS, new BinaryOperationExpressionType(CsLexer.MINUS, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.MINUS, new BinaryOperationExpressionType(CsLexer.MINUS, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "-";
 			}
 
 			@Override
-			public String byteCode() {
-				return "isub";
+			public int opCode() {
+				return ISUB;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.MUL, new BinaryOperationExpressionType(CsLexer.MUL, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.MUL, new BinaryOperationExpressionType(CsLexer.MUL, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "*";
 			}
 
 			@Override
-			public String byteCode() {
-				return "imul";
+			public int opCode() {
+				return IMUL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.DIV, new BinaryOperationExpressionType(CsLexer.DIV, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.DIV, new BinaryOperationExpressionType(CsLexer.DIV, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "/";
 			}
 
 			@Override
-			public String byteCode() {
-				return "idiv";
+			public int opCode() {
+				return IDIV;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.REM, new BinaryOperationExpressionType(CsLexer.REM, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.REM, new BinaryOperationExpressionType(CsLexer.REM, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "%";
 			}
 
 			@Override
-			public String byteCode() {
-				return "irem";
+			public int opCode() {
+				return IREM;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.AND, new BinaryOperationExpressionType(CsLexer.AND, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.BIT_AND, new BinaryOperationExpressionType(CsLexer.BIT_AND, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "&";
 			}
 
 			@Override
-			public String byteCode() {
-				return "iand";
+			public int opCode() {
+				return IAND;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.BIT_XOR, new BinaryOperationExpressionType(CsLexer.BIT_XOR, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.BIT_XOR, new BinaryOperationExpressionType(CsLexer.BIT_XOR, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "|";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ixor";
+			public int opCode() {
+				return IXOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.OR, new BinaryOperationExpressionType(CsLexer.OR, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.OR, new BinaryOperationExpressionType(CsLexer.OR, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "^";
 			}
 
 			@Override
-			public String byteCode() {
-				return "ior";
+			public int opCode() {
+				return IOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.EQ, new ComparasionOperationExpressionType(CsLexer.EQ, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.EQ, new ComparasionOperationExpressionType(CsLexer.EQ, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "==";
 			}
 
 			@Override
-			public String byteCode() {
-				return "if_icmpeq";
+			public int opCode() {
+				return IF_ICMPEQ;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.NEQ, new ComparasionOperationExpressionType(CsLexer.NEQ, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.NEQ, new ComparasionOperationExpressionType(CsLexer.NEQ, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "==";
 			}
 
 			@Override
-			public String byteCode() {
-				return "if_icmpne";
+			public int opCode() {
+				return IF_ACMPNE;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LT, new ComparasionOperationExpressionType(CsLexer.LT, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.LT, new ComparasionOperationExpressionType(CsLexer.LT, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "<";
 			}
 
 			@Override
-			public String byteCode() {
-				return "if_icmplt";
+			public int opCode() {
+				return IF_ICMPLT;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LE, new ComparasionOperationExpressionType(CsLexer.LE, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.LE, new ComparasionOperationExpressionType(CsLexer.LE, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return "<=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "if_icmple";
+			public int opCode() {
+				return IF_ICMPLE;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.GT, new ComparasionOperationExpressionType(CsLexer.GT, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.GT, new ComparasionOperationExpressionType(CsLexer.GT, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return ">";
 			}
 
 			@Override
-			public String byteCode() {
-				return "if_icmpgt";
+			public int opCode() {
+				return IF_ICMPGT;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.GE, new ComparasionOperationExpressionType(CsLexer.GE, errors, symbolTable, tree) {
+		expressionTypeByToken.put(CsLexer.GE, new ComparasionOperationExpressionType(CsLexer.GE, errors, scope, tree) {
 			@Override
 			public String operation() {
 				return ">=";
 			}
 
 			@Override
-			public String byteCode() {
-				return "if_icmpge";
+			public int opCode() {
+				return IF_ICMPGE;
 			}
 		});
 	}
+
 
 }

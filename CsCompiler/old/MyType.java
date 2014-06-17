@@ -1,6 +1,7 @@
 package org.itmo.iyakupov.components;
 
-public enum Type {
+@Deprecated
+public enum MyType {
     INT {
         @Override
         public String getDescriptor() {
@@ -133,7 +134,7 @@ public enum Type {
     public abstract String load();
     public abstract String store();
 
-    public static Type getInstance(String type) {
-        return Type.valueOf(type.toUpperCase());
+    public static MyType getInstance(String type) {
+        return MyType.valueOf(type.toUpperCase());
     }
 }

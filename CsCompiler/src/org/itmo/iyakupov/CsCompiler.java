@@ -2,9 +2,12 @@ package org.itmo.iyakupov;
 
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+
+import javax.management.RuntimeErrorException;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -16,9 +19,10 @@ import org.apache.commons.logging.LogFactory;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.a4autogen.CsParser;
 import org.itmo.iyakupov.components.ClassDef;
+import org.itmo.iyakupov.scope.TranslateScope;
 import org.itmo.iyakupov.utils.TreePsGeneratorBicycle;
 
-public class CsCompiler {
+public class CsCompiler extends ClassLoader {
 	public final static String psFileName = "AST.ps";
 	private final static Log log = LogFactory.getLog(CsCompiler.class);
 	
@@ -66,7 +70,26 @@ public class CsCompiler {
 		log.info("\t " + tree.toInfoString(p));
 
 		ErrorProcessor ep = new ErrorProcessor();
-		new ClassDef(tree, new SymbolTable(ep), ep);
+		ClassDef cd = new ClassDef(tree, new TranslateScope(), ep);
+		byte[] b = cd.compile();
+        try {
+    		FileOutputStream fos = new FileOutputStream("Out.class");
+    		try {
+    			fos.write(b, 0, b.length);
+    		} finally {
+    			fos.close();
+    		}
+    		Runtime.getRuntime().exec("javap Out -c > Out.bc");
+            Class<?> expClass = new CsCompiler().defineClass("Test", b, 0, b.length);
+
+			System.err.println(expClass.getField("tst").getInt(expClass.newInstance()));    	
+//			System.err.println(expClass.getField("xxx").getInt(expClass.newInstance()));
+//			System.err.println(expClass.getField("zzz").getInt(expClass.newInstance()));
+//			System.err.println(expClass.getField("yyy").getInt(expClass.newInstance()));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		//System.err.println("\t " + tree.getTokens(CsLexer.CLASS).size());
 		//System.err.println("\t " + tree.getTokens(CsLexer.ACCESS_MODIFIER).size());
 		//System.err.println("\t " + tree.getTokens(CsLexer.IDENTIFIER).size());

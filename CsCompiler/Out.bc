@@ -1,0 +1,15 @@
+public class Test extends java.lang.Object{
+public int xxx;
+
+public int yyy;
+
+public int zzz;
+
+public Test();
+  Code:
+   0:	aload_0
+   1:	invokespecial	#12; //Method java/lang/Object."<init>":()V
+   4:	return
+
+}
+
