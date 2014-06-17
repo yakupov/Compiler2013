@@ -70,7 +70,7 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
 					} else if (details.getRuleIndex() == CsParser.RULE_init_declarator_list) {
 						for (ParserRuleContext declarator : details.getRuleContexts(ParserRuleContext.class)) {
 							if (declarator.getRuleIndex() == CsParser.RULE_init_declarator) {
-								fields.add(new Variable(declarator, declarationSpecifier, scope, errorProcessor));							
+								fields.add(new Variable(declarator, declarationSpecifier, scope, errorProcessor, name));							
 							}
 						}
 					}
@@ -83,12 +83,7 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
 	}
 
 	private void assignToVariable(MethodVisitor mv, Variable v) {
-		if (ExpressionType.isPrimitiveType(v.getType())) {
-			//mv.visitVarInsn(ISTORE, scope.getLocalVariableIndex(v.getName()));
-			mv.visitFieldInsn(PUTFIELD, name, v.getName(), v.getType().getDescriptor());
-		} else {
-			mv.visitVarInsn(ASTORE, scope.getLocalVariableIndex(v.getName()));
-		}
+		mv.visitFieldInsn(PUTFIELD, name, v.getName(), v.getType().getDescriptor());
 	}
 	
 	@Override
@@ -114,6 +109,7 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
         for (Variable v: fields) {
         	if (v.getInitExpression() != null) {
+                mv.visitVarInsn(ALOAD, 0);        
         		v.getInitExpression().compile(mv);
         		assignToVariable(mv, v);
         	}

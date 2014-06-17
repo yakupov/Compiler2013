@@ -7,9 +7,11 @@ import org.objectweb.asm.Type;
 
 public abstract class ExpressionType implements Opcodes, MethodResident {
 	protected final int lexemType;
+	protected final Expression parent;
 
-	public ExpressionType(int lexemType) {
+	public ExpressionType(int lexemType, Expression parent) {
 		this.lexemType = lexemType;
+		this.parent = parent;
 	}
 
 	public abstract Type getType();

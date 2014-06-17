@@ -83,9 +83,9 @@ public class CsCompiler extends ClassLoader {
             Class<?> expClass = new CsCompiler().defineClass("Test", b, 0, b.length);
 
 			System.err.println(expClass.getField("tst").getInt(expClass.newInstance()));    	
-//			System.err.println(expClass.getField("xxx").getInt(expClass.newInstance()));
-//			System.err.println(expClass.getField("zzz").getInt(expClass.newInstance()));
-//			System.err.println(expClass.getField("yyy").getInt(expClass.newInstance()));
+			System.err.println(expClass.getField("xxx").getInt(expClass.newInstance()));
+			System.err.println(expClass.getField("yyy").getInt(expClass.newInstance()));
+			System.err.println(expClass.getField("zzz").getInt(expClass.newInstance()));
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

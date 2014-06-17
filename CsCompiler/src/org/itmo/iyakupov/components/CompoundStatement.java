@@ -40,7 +40,7 @@ public class CompoundStatement implements MethodResident {
 					} else if (details.getRuleIndex() == CsParser.RULE_init_declarator_list) {
 						for (ParserRuleContext declarator : details.getRuleContexts(ParserRuleContext.class)) {
 							if (declarator.getRuleIndex() == CsParser.RULE_init_declarator) {
-								elements.add(new Variable(declarator, declarationSpecifier, symbolTable, errorProcessor));							
+								elements.add(new Variable(declarator, declarationSpecifier, symbolTable, errorProcessor, null));							
 							}
 						}
 					}
@@ -51,7 +51,8 @@ public class CompoundStatement implements MethodResident {
 				if (child.getRuleContext(ParserRuleContext.class, 0).getRuleIndex() == CsParser.RULE_expression_statement) {
 					elements.add(new Expression(child.getRuleContext(ParserRuleContext.class, 0).getRuleContext(ParserRuleContext.class, 0),
 							errorProcessor, 
-							symbolTable)
+							symbolTable, 
+							null)
 					);
 				}
 			}

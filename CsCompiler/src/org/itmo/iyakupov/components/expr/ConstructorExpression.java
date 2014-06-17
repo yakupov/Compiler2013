@@ -12,18 +12,11 @@ import org.objectweb.asm.Type;
 public class ConstructorExpression extends ExpressionType {
 	private final Log log = LogFactory.getLog(getClass());
 
-    protected ErrorProcessor errors;
-	protected TranslateScope scope;
-	protected ParserRuleContext tree;
 	
-	public ConstructorExpression(ParserRuleContext tree, TranslateScope scope, ErrorProcessor errors) {
-		super(CsLexer.NEW);
-		
-        this.errors = errors;
-        this.scope = scope;
-        this.tree = tree;	
-    
-		log.trace("Constructor call added: " + tree.getText());
+	public ConstructorExpression(Expression parent) {
+		super(CsLexer.NEW, parent);
+	
+		log.trace("Constructor call added: " + parent.tree.getText());
 	}
 
 	

@@ -60,7 +60,8 @@ public class ClassMethod implements Opcodes, ClassResident {
 										args.add(new Variable(parmListChild.getRuleContext(ParserRuleContext.class, 1), 
 												parmListChild.getRuleContext(ParserRuleContext.class, 0),
 												scope,
-												errorProcessor));
+												errorProcessor,
+												null));
 									}
 								}
 							}
@@ -81,7 +82,7 @@ public class ClassMethod implements Opcodes, ClassResident {
 
 	@Override
 	public void compile(ClassWriter cw, String className, List<Variable> initExpressions) {
-		if (true) return;
+		//if (true) return;
 		
 		final boolean isConstructor = name.equals(className);
 		final String actualName = isConstructor ? "<init>" : name;
@@ -92,7 +93,16 @@ public class ClassMethod implements Opcodes, ClassResident {
 			type = "()V";
 		}
 		log.trace(format("Compiling method %s w. args %s. Is constructor: %s", actualName, type, isConstructor));
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, actualName, type, null, null);
+		StringBuilder descriptor = new StringBuilder();
+		descriptor.append('(');
+		for (int i = 0; i < args.size(); ++i) {
+			if (i != 0)
+				descriptor.append(';');
+			descriptor.append(args.get(i).getType().getDescriptor());
+		}
+		descriptor.append(')');
+		descriptor.append(type);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, actualName, descriptor.toString(), null, null);
         if (isConstructor) {
             mv.visitVarInsn(ALOAD, 0);
             mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");

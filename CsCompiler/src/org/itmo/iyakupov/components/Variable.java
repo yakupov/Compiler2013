@@ -20,7 +20,7 @@ public class Variable  {
 	protected final int line;
 
 	public Variable(ParserRuleContext tree, ParserRuleContext declarationSpecifierTree, 
-			TranslateScope st, ErrorProcessor errorProcessor) {
+			TranslateScope st, ErrorProcessor errorProcessor, String className) {
 		this.scope = st;
 		declarationSpecifier = new DeclarationSpecifier(declarationSpecifierTree, st);
 		line = tree.getStart().getLine();
@@ -38,7 +38,7 @@ public class Variable  {
 				if (tToken != null)
 					initOperator = tToken.getText();
 			} else if (child.getRuleIndex() == CsParser.RULE_assignment_expression) {
-				initExpression = new Expression(child, errorProcessor, scope);
+				initExpression = new Expression(child, errorProcessor, scope, className);
 			}
 		}
 		

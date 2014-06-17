@@ -7,8 +7,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 public abstract class ComparasionOperationExpressionType extends BinaryOperationExpressionType {
-    public ComparasionOperationExpressionType(int lexemType, ErrorProcessor errors, TranslateScope scope, ParserRuleContext tree) {
-        super(lexemType, errors, scope, tree);
+    public ComparasionOperationExpressionType(int lexemType, Expression parent) {
+        super(lexemType, parent);
     }
 
     @Override

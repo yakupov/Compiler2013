@@ -23,17 +23,18 @@ import org.objectweb.asm.Type;
 public class Expression implements Opcodes, MethodResident {
 	private final Log log = LogFactory.getLog(getClass());
 
-	private final ParserRuleContext tree;
-	private final TranslateScope scope;
-	private final ErrorProcessor errors;
+	ParserRuleContext tree;
+	final TranslateScope scope;
+	final ErrorProcessor errors;
 	private final ExpressionType expressionType;
-	private final Map<Integer, ExpressionType> expressionTypeByToken;
+	private final Map<Integer, ExpressionType> expressionTypeByToken = new HashMap<Integer, ExpressionType>();
+	final String className;
 
-	public Expression(ParserRuleContext tree, ErrorProcessor errors, TranslateScope scope) {
+	public Expression(ParserRuleContext tree, ErrorProcessor errors, TranslateScope scope, String className) {
 		this.tree = tree;
 		this.errors = errors;
 		this.scope = scope;
-		this.expressionTypeByToken = new HashMap<Integer, ExpressionType>();
+		this.className = className;
 		createExpressionTypes();
 		expressionType = determineExpressionType(tree);
 		//expressionType.process(); //FIXME
@@ -54,10 +55,14 @@ public class Expression implements Opcodes, MethodResident {
 	 */
 
 	private void assignToVariable(MethodVisitor mv, String varName) {
-		if (ExpressionType.isPrimitiveType(getType())) {
-			mv.visitVarInsn(ISTORE, scope.getLocalVariableIndex(varName));
+		if (className != null) {
+			mv.visitFieldInsn(PUTFIELD, className, varName, getType().getDescriptor());
 		} else {
-			mv.visitVarInsn(ASTORE, scope.getLocalVariableIndex(varName));
+			if (ExpressionType.isPrimitiveType(getType())) {
+				mv.visitVarInsn(ISTORE, scope.getLocalVariableIndex(varName));
+			} else {
+				mv.visitVarInsn(ASTORE, scope.getLocalVariableIndex(varName));
+			}
 		}
 	}
 
@@ -92,7 +97,7 @@ public class Expression implements Opcodes, MethodResident {
 
 	private Expression getLValueVariableExpr() {
 		errors.assertTrue(isLValue(), tree.getStart().getLine(), "LValue is expected");
-		if (expressionType.lexemType == CsLexer.IDENTIFIER) {
+		if (expressionType.lexemType == CsParser.IDENTIFIER) {
 			return this;
 		}
 		return ((LValueAssignExpressionType) expressionType).expression1.getLValueVariableExpr();
@@ -107,9 +112,14 @@ public class Expression implements Opcodes, MethodResident {
 	}
 
 	private ExpressionType determineExpressionType(ParserRuleContext tree) {
+		this.tree = tree;
+		if (tree == null) 
+			throw new RuntimeException("Tree is null, fatal");
 		if (tree.getChildCount() == 0)
 			throw new RuntimeException("Tree w/o children! Error! " + tree.toString());
-
+		if (tree.getChildCount() == 1)
+			log.warn("OneChild tree. " + tree.getText() + CsParser.ruleNames[tree.getRuleIndex()]);
+		
 		switch (tree.getRuleIndex()) {
 		case CsParser.RULE_additive_expression:
 		case CsParser.RULE_multiplicative_expression:
@@ -122,7 +132,8 @@ public class Expression implements Opcodes, MethodResident {
 				return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
 			Integer[] possibleOperators = {CsParser.PLUS, CsParser.MINUS, CsParser.MUL, CsParser.DIV, CsParser.REM, 
 					CsParser.AND, CsParser.OR, CsParser.BIT_XOR, CsParser.BIT_AND, CsParser.BIT_OR};
-			for (Integer operator : possibleOperators) {
+	        for (Integer operator : possibleOperators) {
+	        	//if (operator == CsParser.PLUS) throw new RuntimeException(tree.getText() + this.tree.getChildCount());
 				if (tree.getTokens(operator).size() > 0)
 					return expressionTypeByToken.get(operator);
 			}
@@ -158,7 +169,7 @@ public class Expression implements Opcodes, MethodResident {
 		case CsParser.RULE_unary_expression: {
 			if (tree.getChildCount() == 1)
 				return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
-			Integer[] possibleOperators = {CsParser.INCREMENT, CsParser.DECREMENT, CsParser.PLUS, CsParser.MINUS, CsParser.NOT};
+			Integer[] possibleOperators = {CsParser.INCREMENT, CsParser.DECREMENT, CsParser.MINUS, CsParser.NOT};
 			for (Integer operator : possibleOperators) {
 				if (tree.getRuleContext(ParserRuleContext.class, 1).getTokens(operator).size() > 0)
 					return expressionTypeByToken.get(operator);
@@ -173,12 +184,12 @@ public class Expression implements Opcodes, MethodResident {
 		case CsParser.RULE_postfix_expression: {
 			if (tree.getChildCount() == 1)
 				return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
-			return new PostfixExpression(tree, scope, errors);
+			return new PostfixExpression(this);
 		}
 		case CsParser.RULE_primary_expression: {
 			if (tree.getChildCount() == 1) {
-				if (tree.getTokens(CsLexer.IDENTIFIER).size() > 0) {
-					return expressionTypeByToken.get(CsLexer.IDENTIFIER);
+				if (tree.getTokens(CsParser.IDENTIFIER).size() > 0) {
+					return expressionTypeByToken.get(CsParser.IDENTIFIER);
 				} else {
 					return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));    				
 				}
@@ -188,10 +199,10 @@ public class Expression implements Opcodes, MethodResident {
 		case CsParser.RULE_constant: {
 			if (tree.getChildCount() == 1)
 				return expressionTypeByToken.get(((TerminalNode)(tree.getChild(0))).getSymbol().getType());
-			return new PostfixExpression(tree, scope, errors);
+			return new PostfixExpression(this);
 		}
 		case CsParser.RULE_constructor_call: {
-			return new ConstructorExpression(tree, scope, errors);
+			return new ConstructorExpression(this);
 		}
 		}	
 
@@ -205,12 +216,14 @@ public class Expression implements Opcodes, MethodResident {
 		/*
 		 * No args
 		 */
-		expressionTypeByToken.put(CsLexer.STRING_LITERAL, new ExpressionType(CsLexer.STRING_LITERAL) {
+		expressionTypeByToken.put(CsParser.STRING_LITERAL, new ExpressionType(CsParser.STRING_LITERAL, this) {
 			private String value;
 
 			@Override
 			public void compile(MethodVisitor mv) {
 				value = tree.getText();
+				log.trace("visitLdcInsn: " + value);
+		        //mv.visitVarInsn(ALOAD, 0);
 				mv.visitLdcInsn(value);
 			}
 
@@ -219,13 +232,16 @@ public class Expression implements Opcodes, MethodResident {
 				return Type.getType(String.class);
 			}
 		});
-		expressionTypeByToken.put(CsLexer.DECIMAL_LITERAL, new ExpressionType(CsLexer.DECIMAL_LITERAL) {
+		expressionTypeByToken.put(CsParser.DECIMAL_LITERAL, new ExpressionType(CsParser.DECIMAL_LITERAL, this) {
 			private String value;
 
 			@Override
 			public void compile(MethodVisitor mv) {
 				value = tree.getText();
-				mv.visitLdcInsn(Integer.parseInt(value));
+				log.trace("int_visitLdcInsn: " + value);
+		        //mv.visitVarInsn(ALOAD, 0);        
+				//mv.visitLdcInsn(Integer.parseInt(value));
+		        mv.visitIntInsn(SIPUSH, Integer.parseInt(value));
 			}
 
 			@Override
@@ -233,18 +249,18 @@ public class Expression implements Opcodes, MethodResident {
 				return Type.INT_TYPE;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.IDENTIFIER, new IDExpressionType(CsLexer.IDENTIFIER, errors, scope, tree));
+		expressionTypeByToken.put(CsParser.IDENTIFIER, new IDExpressionType(CsParser.IDENTIFIER, this));
 
 		/*
 		 * UNARY
 		 */
-		expressionTypeByToken.put(CsLexer.MINUS, new ExpressionType(CsLexer.MINUS) {
+		expressionTypeByToken.put(CsParser.MINUS, new ExpressionType(CsParser.MINUS, this) {
 			private Expression expression;
 
 			@Override
 			public void compile(MethodVisitor mv) {
 				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "-");
-				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
 				expression.compile(mv);
 				mv.visitInsn(INEG);
 			}
@@ -259,13 +275,13 @@ public class Expression implements Opcodes, MethodResident {
 				return false;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.INCREMENT, new ExpressionType(CsLexer.INCREMENT) {
+		expressionTypeByToken.put(CsParser.INCREMENT, new ExpressionType(CsParser.INCREMENT, this) {
 			private Expression expression;
 
 			@Override
 			public void compile(MethodVisitor mv) {
 				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_INC");
-				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
 				expression.compile(mv);
 				mv.visitInsn(IINC);
 				String varName = expression.getLValueVariable();
@@ -285,13 +301,13 @@ public class Expression implements Opcodes, MethodResident {
 				return false;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.DECREMENT, new ExpressionType(CsLexer.DECREMENT) {
+		expressionTypeByToken.put(CsParser.DECREMENT, new ExpressionType(CsParser.DECREMENT, this) {
 			private Expression expression;
 
 			@Override
 			public void compile(MethodVisitor mv) {
 				errors.assertEquals(1, tree.getChildCount(), tree.getStart().getLine(), "POST_DEC");
-				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
+				expression = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
 				expression.compile(mv);
 				mv.visitInsn(DUP);
 				mv.visitInsn(ICONST_1);
@@ -317,15 +333,16 @@ public class Expression implements Opcodes, MethodResident {
 		/*
 		 * BINARY
 		 */
-		expressionTypeByToken.put(CsLexer.ASSIGN, new ExpressionType(CsLexer.ASSIGN) {
+		expressionTypeByToken.put(CsParser.ASSIGN, new ExpressionType(CsParser.ASSIGN, this) {
 			private Expression expression1;
 			private Expression expression2;
 
 			@Override
 			public void compile(MethodVisitor mv) {
-				expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
-				expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
+				expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
+				expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope, className);
 				
+		        mv.visitVarInsn(ALOAD, 0);        
 				expression2.compile(mv);
 				String varName = expression1.getLValueVariable();
 				if (varName == null)
@@ -344,7 +361,7 @@ public class Expression implements Opcodes, MethodResident {
 				return true;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.MUL_ASS, new LValueAssignExpressionType(CsLexer.MUL_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.MUL_ASS, new LValueAssignExpressionType(CsParser.MUL_ASS, this) {
 			@Override
 			public String operation() {
 				return "*=";
@@ -355,7 +372,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IMUL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.DIV_ASS, new LValueAssignExpressionType(CsLexer.DIV_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.DIV_ASS, new LValueAssignExpressionType(CsParser.DIV_ASS, this) {
 			@Override
 			public String operation() {
 				return "/=";
@@ -366,7 +383,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IDIV;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.REM_ASS, new LValueAssignExpressionType(CsLexer.REM_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.REM_ASS, new LValueAssignExpressionType(CsParser.REM_ASS, this) {
 			@Override
 			public String operation() {
 				return "%=";
@@ -377,7 +394,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IREM;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.ADD_ASS, new LValueAssignExpressionType(CsLexer.ADD_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.ADD_ASS, new LValueAssignExpressionType(CsParser.ADD_ASS, this) {
 			@Override
 			public String operation() {
 				return "+=";
@@ -388,7 +405,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IADD;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.SUB_ASS, new LValueAssignExpressionType(CsLexer.SUB_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.SUB_ASS, new LValueAssignExpressionType(CsParser.SUB_ASS, this) {
 			@Override
 			public String operation() {
 				return "-=";
@@ -399,7 +416,7 @@ public class Expression implements Opcodes, MethodResident {
 				return ISUB;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LSHIFT_ASS, new LValueAssignExpressionType(CsLexer.LSHIFT_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.LSHIFT_ASS, new LValueAssignExpressionType(CsParser.LSHIFT_ASS, this) {
 			@Override
 			public String operation() {
 				return "<<=";
@@ -410,7 +427,7 @@ public class Expression implements Opcodes, MethodResident {
 				return ISHL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.RSHIFT_ASS, new LValueAssignExpressionType(CsLexer.RSHIFT_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.RSHIFT_ASS, new LValueAssignExpressionType(CsParser.RSHIFT_ASS, this) {
 			@Override
 			public String operation() {
 				return ">>=";
@@ -421,7 +438,7 @@ public class Expression implements Opcodes, MethodResident {
 				return ISHR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.AND_ASS, new LValueAssignExpressionType(CsLexer.AND_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.AND_ASS, new LValueAssignExpressionType(CsParser.AND_ASS, this) {
 			@Override
 			public String operation() {
 				return "&=";
@@ -432,7 +449,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IAND;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.OR_ASS, new LValueAssignExpressionType(CsLexer.OR_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.OR_ASS, new LValueAssignExpressionType(CsParser.OR_ASS, this) {
 			@Override
 			public String operation() {
 				return "|=";
@@ -443,7 +460,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.XOR_ASS, new LValueAssignExpressionType(CsLexer.XOR_ASS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.XOR_ASS, new LValueAssignExpressionType(CsParser.XOR_ASS, this) {
 			@Override
 			public String operation() {
 				return "^=";
@@ -454,14 +471,14 @@ public class Expression implements Opcodes, MethodResident {
 				return IXOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.OR, new ExpressionType(CsLexer.OR) {
+		expressionTypeByToken.put(CsParser.OR, new ExpressionType(CsParser.OR, this) {
 			Expression e1;
 			Expression e2;
 
 			@Override
 			public void compile(MethodVisitor mv) {
-				e1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
-				e2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
+				e1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
+				e2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope, className);
 
 				// compiles e1
 				e1.compile(mv);
@@ -482,14 +499,14 @@ public class Expression implements Opcodes, MethodResident {
 				return e1.getType();
 			}
 		});
-		expressionTypeByToken.put(CsLexer.AND, new ExpressionType(CsLexer.AND) {
+		expressionTypeByToken.put(CsParser.AND, new ExpressionType(CsParser.AND, this) {
 			Expression e1;
 			Expression e2;
 
 			@Override
 			public void compile(MethodVisitor mv) {
-				e1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope);
-				e2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope);
+				e1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
+				e2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope, className);
 				e1.compile(mv);
 				mv.visitInsn(DUP);
 				Label end = new Label();
@@ -504,7 +521,7 @@ public class Expression implements Opcodes, MethodResident {
 				return e1.getType();
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.LSHIFT, new BinaryOperationExpressionType(CsParser.LSHIFT, this) {
 			@Override
 			public String operation() {
 				return "<<";
@@ -515,7 +532,7 @@ public class Expression implements Opcodes, MethodResident {
 				return ISHL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.RSHIFT, new BinaryOperationExpressionType(CsLexer.PLUS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.RSHIFT, new BinaryOperationExpressionType(CsParser.RSHIFT, this) {
 			@Override
 			public String operation() {
 				return ">>";
@@ -526,7 +543,7 @@ public class Expression implements Opcodes, MethodResident {
 				return ISHR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.PLUS, new BinaryOperationExpressionType(CsLexer.PLUS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.PLUS, new BinaryOperationExpressionType(CsParser.PLUS, this) {
 			@Override
 			public String operation() {
 				return "+";
@@ -537,7 +554,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IADD;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.MINUS, new BinaryOperationExpressionType(CsLexer.MINUS, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.MINUS, new BinaryOperationExpressionType(CsParser.MINUS, this) {
 			@Override
 			public String operation() {
 				return "-";
@@ -548,7 +565,7 @@ public class Expression implements Opcodes, MethodResident {
 				return ISUB;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.MUL, new BinaryOperationExpressionType(CsLexer.MUL, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.MUL, new BinaryOperationExpressionType(CsParser.MUL, this) {
 			@Override
 			public String operation() {
 				return "*";
@@ -559,7 +576,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IMUL;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.DIV, new BinaryOperationExpressionType(CsLexer.DIV, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.DIV, new BinaryOperationExpressionType(CsParser.DIV, this) {
 			@Override
 			public String operation() {
 				return "/";
@@ -570,7 +587,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IDIV;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.REM, new BinaryOperationExpressionType(CsLexer.REM, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.REM, new BinaryOperationExpressionType(CsParser.REM, this) {
 			@Override
 			public String operation() {
 				return "%";
@@ -581,7 +598,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IREM;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.BIT_AND, new BinaryOperationExpressionType(CsLexer.BIT_AND, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.BIT_AND, new BinaryOperationExpressionType(CsParser.BIT_AND, this) {
 			@Override
 			public String operation() {
 				return "&";
@@ -592,7 +609,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IAND;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.BIT_XOR, new BinaryOperationExpressionType(CsLexer.BIT_XOR, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.BIT_XOR, new BinaryOperationExpressionType(CsParser.BIT_XOR, this) {
 			@Override
 			public String operation() {
 				return "|";
@@ -603,7 +620,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IXOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.OR, new BinaryOperationExpressionType(CsLexer.OR, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.OR, new BinaryOperationExpressionType(CsParser.OR, this) {
 			@Override
 			public String operation() {
 				return "^";
@@ -614,7 +631,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IOR;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.EQ, new ComparasionOperationExpressionType(CsLexer.EQ, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.EQ, new ComparasionOperationExpressionType(CsParser.EQ, this) {
 			@Override
 			public String operation() {
 				return "==";
@@ -625,7 +642,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IF_ICMPEQ;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.NEQ, new ComparasionOperationExpressionType(CsLexer.NEQ, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.NEQ, new ComparasionOperationExpressionType(CsParser.NEQ, this) {
 			@Override
 			public String operation() {
 				return "==";
@@ -636,7 +653,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IF_ACMPNE;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LT, new ComparasionOperationExpressionType(CsLexer.LT, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.LT, new ComparasionOperationExpressionType(CsParser.LT, this) {
 			@Override
 			public String operation() {
 				return "<";
@@ -647,7 +664,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IF_ICMPLT;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.LE, new ComparasionOperationExpressionType(CsLexer.LE, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.LE, new ComparasionOperationExpressionType(CsParser.LE, this) {
 			@Override
 			public String operation() {
 				return "<=";
@@ -658,7 +675,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IF_ICMPLE;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.GT, new ComparasionOperationExpressionType(CsLexer.GT, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.GT, new ComparasionOperationExpressionType(CsParser.GT, this) {
 			@Override
 			public String operation() {
 				return ">";
@@ -669,7 +686,7 @@ public class Expression implements Opcodes, MethodResident {
 				return IF_ICMPGT;
 			}
 		});
-		expressionTypeByToken.put(CsLexer.GE, new ComparasionOperationExpressionType(CsLexer.GE, errors, scope, tree) {
+		expressionTypeByToken.put(CsParser.GE, new ComparasionOperationExpressionType(CsParser.GE, this) {
 			@Override
 			public String operation() {
 				return ">=";
