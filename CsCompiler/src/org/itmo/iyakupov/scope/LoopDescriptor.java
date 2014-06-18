@@ -2,9 +2,6 @@ package org.itmo.iyakupov.scope;
 
 import org.objectweb.asm.Label;
 
-/**
- * @author Irene Petrova
- */
 class LoopDescriptor {
     private final Label continueLabel;
     private final Label breakLabel;

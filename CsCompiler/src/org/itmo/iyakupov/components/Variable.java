@@ -41,8 +41,7 @@ public class Variable  {
 				initExpression = new Expression(child, errorProcessor, scope, className);
 			}
 		}
-		
-		scope.addLocalVariable(name, declarationSpecifier.type);
+		//scope.addLocalVariable(name, declarationSpecifier.type);
 		//scope.addVariable(this); //FIXME
 	}
 

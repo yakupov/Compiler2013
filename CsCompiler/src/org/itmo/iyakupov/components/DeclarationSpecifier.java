@@ -22,7 +22,7 @@ public class DeclarationSpecifier {
 	final private ErrorProcessor errors = new ErrorProcessor();
 	final private Map<String, String> stdDataTypes = new HashMap<String, String>();	
 	
-	public DeclarationSpecifier(ParserRuleContext tree, TranslateScope st) {
+	public DeclarationSpecifier(ParserRuleContext tree, TranslateScope scope) {
 		fillMap();
 		
 		for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {

@@ -11,8 +11,6 @@ import org.apache.commons.logging.LogFactory;
 import org.itmo.iyakupov.CompilationUnit;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.a4autogen.CsParser;
-import org.itmo.iyakupov.components.expr.Expression;
-import org.itmo.iyakupov.components.expr.ExpressionType;
 import org.itmo.iyakupov.scope.TranslateScope;
 
 import org.objectweb.asm.ClassWriter;
@@ -54,8 +52,6 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
 		name = identifiers.get(0).getText();
 		log.trace("Class name: " + name);
 		
-		// scope.newBlock(); // FIXME
-		
 		//Fields and methods
 		for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_cls_method) {
@@ -77,21 +73,20 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
 				}
 			}
 		}
-
-		// scope.endBlock(tree.getStart().getLine()); //FIXME
-
 	}
 
-	private void assignToVariable(MethodVisitor mv, Variable v) {
+	public void assignToVariable(MethodVisitor mv, Variable v) {
 		mv.visitFieldInsn(PUTFIELD, name, v.getName(), v.getType().getDescriptor());
 	}
 	
 	@Override
 	public byte[] compile() {
+		scope.addClass(name);
+
         // class header
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         cw.visit(V1_6, ACC_PUBLIC, name, null, "java/lang/Object", new String[] {});
-
+        
         //Fields
         for (Variable v: fields) {
         	FieldVisitor fv = cw.visitField(ACC_PUBLIC, 
@@ -100,11 +95,11 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
         			null, 
         			null);
         	fv.visitEnd();
+        	scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
         }
         
         // default public constructor
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null,
-                null);
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
         for (Variable v: fields) {
@@ -118,10 +113,12 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
         mv.visitMaxs(1, 1);
         mv.visitEnd();
 		
+        //Methods
         for (ClassMethod m : methods) {
-        	m.compile(cw, name, fields);
+        	m.compile(cw, name, fields, this);
         }
              
+		scope.endBlock();
         return cw.toByteArray();
 	}
 }

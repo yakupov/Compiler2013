@@ -9,11 +9,11 @@ import org.apache.commons.logging.LogFactory;
 import org.itmo.iyakupov.ClassResident;
 import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.a4autogen.CsParser;
-import org.itmo.iyakupov.components.expr.Expression;
 import org.itmo.iyakupov.scope.TranslateScope;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import static java.lang.String.format;
 
@@ -41,9 +41,6 @@ public class ClassMethod implements Opcodes, ClassResident {
 			log.trace("Constructor added");
 		}
 		
-		
-		// scope.newBlock(); // FIXME
-		
 		for (ParserRuleContext child : tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_declaration_specifier) {
 				declarationSpecifier = new DeclarationSpecifier(child, scope);
@@ -69,11 +66,9 @@ public class ClassMethod implements Opcodes, ClassResident {
 					}
 				}
 			} else if (child.getRuleIndex() == CsParser.RULE_compound_statement) {
-				block = new CompoundStatement(child, scope, errorProcessor);
+				block = new CompoundStatement(child, scope, errorProcessor, scope);
 			}
 		}
-		
-		// scope.endBlock(tree.getStart().getLine()); // FIXME
 	}
 
 	public String getName() {
@@ -81,8 +76,18 @@ public class ClassMethod implements Opcodes, ClassResident {
 	}
 
 	@Override
-	public void compile(ClassWriter cw, String className, List<Variable> initExpressions) {
-		//if (true) return;
+	public void compile(ClassWriter cw, String className, List<Variable> initExpressions, ClassDef parentClass) {
+		List<Type> argTypes = new ArrayList<Type>();
+		for (Variable v: args) {
+			argTypes.add(v.getType());
+			scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
+		}
+		if (scope.isFunctionDeclared(name, argTypes.toArray(new Type[argTypes.size()]))) {
+			errorProcessor.fail(0, "Trying to redefine method " + name);
+		}
+		scope.declareFunction(name, declarationSpecifier.type, argTypes.toArray(new Type[argTypes.size()]));
+		scope.setMethodName(name);
+		scope.newBlock();
 		
 		final boolean isConstructor = name.equals(className);
 		final String actualName = isConstructor ? "<init>" : name;
@@ -108,9 +113,11 @@ public class ClassMethod implements Opcodes, ClassResident {
             mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
 	        for (Variable v: initExpressions) {
 	        	if (v.getInitExpression() != null) {
-	        		//e.compile(mv);
-	        		
-	        		//TODO
+	            	if (v.getInitExpression() != null) {
+	                    mv.visitVarInsn(ALOAD, 0);        
+	            		v.getInitExpression().compile(mv);
+	            		parentClass.assignToVariable(mv, v);
+	            	}
 	        	}
 	        }
         }
@@ -118,6 +125,9 @@ public class ClassMethod implements Opcodes, ClassResident {
         mv.visitInsn(RETURN);
         mv.visitMaxs(1, 1);
         mv.visitEnd();
+        
+        scope.setMethodName(null);
+		scope.endBlock();
 	}
 }
 

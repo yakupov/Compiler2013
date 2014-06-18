@@ -1,22 +1,30 @@
 package org.itmo.iyakupov.scope;
 
+import org.itmo.iyakupov.CompileException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
 public class TranslateScope implements Scope {
+	private class Namespace {
+	    private final Map<FunctionSignature, Type> functions = new HashMap<FunctionSignature, Type>();
+	    private final Map<String, LocalVariableDescriptor> local = new HashMap<String, LocalVariableDescriptor>();
+	}
+	
     private String className;
     private String methodName;
     private Type methodType;
     private byte[] byteCode;
     //private Map<String, Type> global = new HashMap<String, Type>();
-    private Map<FunctionSignature, Type> functions = new HashMap<FunctionSignature, Type>();
-    private Map<String, LocalVariableDescriptor> local = new HashMap<String, LocalVariableDescriptor>();
+    private Map<String, Namespace> classes = new HashMap<String, Namespace>();
+
     private Stack<LoopDescriptor> loop = new Stack<LoopDescriptor>();
+    private List<Map<String, LocalVariableDescriptor>> localVars = new ArrayList<Map<String, LocalVariableDescriptor>>(); 
 
     public String getClassName() {
         return className;
@@ -33,6 +41,33 @@ public class TranslateScope implements Scope {
     public void setByteCode(byte[] byteCode) {
         this.byteCode = byteCode;
     }
+    
+    public Namespace addClass(String className) {
+    	if (classes.containsKey(className)) {
+    		throw new CompileException("Trying to redefine class " + className);
+    	}
+    	this.className = className;
+    	Namespace ns = new Namespace();
+    	localVars.add(ns.local);
+    	classes.put(className, ns);
+    	return ns;
+    }
+
+    public Namespace getClass(String className) {
+    	if (!classes.containsKey(className)) {
+    		throw new CompileException("Trying to access non-existing class " + className);
+    	}
+    	return classes.get(className);
+    }
+    
+    public void endBlock() {
+    	localVars.remove(localVars.size() - 1);
+    }
+    
+    public void newBlock() {
+    	localVars.add(new HashMap<String, LocalVariableDescriptor>());
+    }
+    
 /*
     public void addGlobalVariable(String name, Type type) {
         global.put(name, type);
@@ -51,36 +86,59 @@ public class TranslateScope implements Scope {
     }
 */
     public void refreshLocalVariables() {
-        local.clear();
+        getClass(className).local.clear();
     }
 
     public boolean isLocalVariable(String name) {
-        return local.containsKey(name);
+        return localVars.get(localVars.size() - 1).containsKey(name);
     }
 
     public int getLocalVariableIndex(String name) {
-        return local.get(name).getIndex();
+    	for (int i = localVars.size() - 1; i >= 0; i--) {
+    		if (localVars.get(i).containsKey(name)) {
+    			return localVars.get(i).get(name).getIndex();
+    		}
+    	}
+    	throw new CompileException("No visible variable " + name);
+        //return getClass(className).local.get(name).getIndex();
     }
 
     public Type getLocalVariableType(String name) {
-        return local.get(name).getType();
+    	for (int i = localVars.size() - 1; i >= 0; i--) {
+    		if (localVars.get(i).containsKey(name)) {
+    			return localVars.get(i).get(name).getType();		
+    		}
+    	}
+    	throw new CompileException("No visible variable " + name);
+    	//return getClass(className).local.get(name).getType();
     }
 
     public int addLocalVariable(String name, Type type) {
-        local.put(name, new LocalVariableDescriptor(local.size(), type));
-        return local.size() - 1;
+		if (localVars.get(localVars.size() - 1).containsKey(name)) {
+			throw new CompileException("Duplicate variable " + name);				
+		}
+    	localVars.get(localVars.size() - 1).put(name, new LocalVariableDescriptor(getClass(className).local.size(), type));
+        return localVars.get(localVars.size() - 1).size() - 1 + calcLocalVarIndexOffset();
+    }
+    
+    private int calcLocalVarIndexOffset() {
+    	int res = 0;
+    	for (int i = localVars.size() - 2; i >= 0; i--) {
+    		res += localVars.get(i).size();
+    	}
+    	return res;
     }
 
     public boolean isFunctionDeclared(String name, Type[] argumentType) {
-        return functions.containsKey(new FunctionSignature(name, argumentType));
+        return getClass(className).functions.containsKey(new FunctionSignature(name, argumentType));
     }
 
     public Type getFunctionReturnType(String name, Type[] argumentType) {
-        return functions.get(new FunctionSignature(name, argumentType));
+        return getClass(className).functions.get(new FunctionSignature(name, argumentType));
     }
 
     public void declareFunction(String name, Type resType, Type[] argumentType) {
-        functions.put(new FunctionSignature(name, argumentType), resType);
+    	getClass(className).functions.put(new FunctionSignature(name, argumentType), resType);
     }
 
     public String getMethodName() {

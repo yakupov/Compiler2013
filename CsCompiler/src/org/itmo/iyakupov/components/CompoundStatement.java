@@ -18,15 +18,17 @@ public class CompoundStatement implements MethodResident {
 
 	protected TranslateScope symbolTable;
 	protected ErrorProcessor errorProcessor;
+	protected TranslateScope scope;
 	
 	//protected List<Variable> declarations = new ArrayList<Variable>();
 	//protected List<Expression> es = new ArrayList<Expression>();
 	protected List<Object> elements = new ArrayList<Object>();
 	
 	
-	public CompoundStatement(ParserRuleContext tree, TranslateScope symbolTable, ErrorProcessor errorProcessor) {
+	public CompoundStatement(ParserRuleContext tree, TranslateScope symbolTable, ErrorProcessor errorProcessor, TranslateScope scope) {
 		this.symbolTable = symbolTable;
 		this.errorProcessor = errorProcessor;
+		this.scope = scope;
 		
 		for (ParserRuleContext child: tree.getRuleContexts(ParserRuleContext.class)) {
 			if (child.getRuleIndex() == CsParser.RULE_declaration) {
@@ -65,8 +67,9 @@ public class CompoundStatement implements MethodResident {
 		for (Object o : elements) {
 			if (o instanceof Variable) {
 				Variable v = (Variable) o;
+				scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
 				//mv.visitVarInsn(ASTORE, paramInt2)
-				//TODO: NOTHING???????????
+				//TODO: compile it
 				/*
 				Label startLabel = mv.visitLabel(null);
 				mv.visitLocalVariable(getName(), 
