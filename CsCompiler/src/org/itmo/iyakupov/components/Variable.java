@@ -54,6 +54,10 @@ public class Variable  {
 		return declarationSpecifier.objName;
 	}
 	
+	public int getArrDim() {
+		return declarationSpecifier.arrDim;
+	}
+	
 	public String getName() {
 		return name;
 	}

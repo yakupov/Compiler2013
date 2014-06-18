@@ -83,7 +83,7 @@ public class CsCompiler extends ClassLoader {
 
         String[] intVars = {"tst", "xxx", "yyy", "zzz"};
         for (String s : intVars) {
-        	log.info(format("%s = %d", s, expClass.getField(s).getInt(expClass.newInstance())));
+        	//log.info(format("%s = %d", s, expClass.getField(s).getInt(expClass.newInstance())));
         }
 		String mainRes = String.valueOf((Integer)expClass.getMethod("Main", String.class).invoke(expClass.newInstance(), ""));
 		log.info("Main: " + mainRes);

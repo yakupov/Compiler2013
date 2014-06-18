@@ -9,11 +9,13 @@ public class Test
    { 
       int a = 5;
       int xxx = 2;
-      //int[,][] testInt = new int[1,2][3];
+      int[,][] testInt = new int[1,2][3];
+      testInt[0,0][0] = 781;
       //System.Console.WriteLine("Hello, World!");
       a += xxx + 6;
       xxx = yyy;
-      return a + xxx;
+      //return a + xxx;
+      return testInt[0,0][0] + a;
    }
    
 }

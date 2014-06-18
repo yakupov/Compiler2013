@@ -111,7 +111,7 @@ postfix_expression
 
 
 primary_expression
-	: IDENTIFIER
+	: IDENTIFIER arr_arg_suffix*
 	| constant
 	| OPB_RND assignment_expression CLB_RND
 	;

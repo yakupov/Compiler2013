@@ -17,8 +17,9 @@ import org.objectweb.asm.Type;
 public class DeclarationSpecifier {
 	private final static Log log = LogFactory.getLog(CsCompiler.class);
 
-	public final Type type; 
-	public final String objName;
+	public Type type; 
+	public String objName;
+	public int arrDim;
 	final private ErrorProcessor errors = new ErrorProcessor();
 	final private Map<String, String> stdDataTypes = new HashMap<String, String>();	
 	
@@ -32,7 +33,6 @@ public class DeclarationSpecifier {
 					errors.assertEquals(primType.size(), 1, child.getStart().getLine(), "invalid primitive type def");
 					type = Type.getType(primType.get(0).getText().toUpperCase());
 					objName = null;
-					return;
 				}
 				
 				List<TerminalNode> complType = child.getTokens(CsParser.IDENTIFIER);
@@ -45,13 +45,14 @@ public class DeclarationSpecifier {
 						type = Type.getType("L" + complType.get(0).getText());
 					}
 					objName = complType.get(0).getText();
-					return;
 				}
+			} else if (child.getRuleIndex() == CsParser.RULE_arr_suffix) {
+				arrDim += child.getTokens(CsParser.COMMA).size() + 1;
 			}
 		}
 		
-		type = null;
-		objName = null;
+		if (type != null)
+			return;
 		errors.assertTrue(false, tree.getStart().getLine(), "E: Unsupported typeSpecifier: " + tree.getText());
 	}
 

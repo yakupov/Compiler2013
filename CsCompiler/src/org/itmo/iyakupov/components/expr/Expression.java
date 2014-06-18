@@ -11,10 +11,7 @@ import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.MethodResident;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.a4autogen.CsParser;
-import org.itmo.iyakupov.components.Variable;
-import org.itmo.iyakupov.scope.Scope;
 import org.itmo.iyakupov.scope.TranslateScope;
-
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -37,22 +34,12 @@ public class Expression implements Opcodes, MethodResident {
 		this.className = className;
 		createExpressionTypes();
 		expressionType = determineExpressionType(tree);
-		//expressionType.process(); //FIXME
 
 		log.trace("Expression added: " + CsLexer.ruleNames[expressionType.lexemType - 1]);
 		log.trace("Token: " + CsParser.tokenNames[expressionType.lexemType]);
 		log.trace("ExpressionType: " + expressionType.getClass().getName());
 		log.trace("Expression text: " + tree.getText());
 	}
-	/*
-	private void assignToVariable(CodeWriter writer, String varName) {
-		if (scope.isGlobalVar(varDef, tree.getStart().getLine())) {
-			writer.println("putstatic Main/%s %s", varDef.getName(), varDef.getType().getDescriptor());
-		} else {
-			writer.println("%s %s", getType().store(), scope.getVariableId(varDef, tree.getStart().getLine()));
-		}
-	}
-	 */
 
 	private void assignToVariable(MethodVisitor mv, String varName) {
 		if (className != null) {
@@ -66,6 +53,13 @@ public class Expression implements Opcodes, MethodResident {
 		}
 	}
 
+	private void arrAssignToVariable(MethodVisitor mv, String varName) {
+		if (ExpressionType.isPrimitiveType(getType())) {
+			mv.visitInsn(IASTORE);
+		} else {
+			mv.visitInsn(AASTORE);
+		}
+	}
 
 	public boolean isLValue() {
 		return expressionType.isLValue();
@@ -117,8 +111,8 @@ public class Expression implements Opcodes, MethodResident {
 			throw new RuntimeException("Tree is null, fatal");
 		if (tree.getChildCount() == 0)
 			throw new RuntimeException("Tree w/o children! Error! " + tree.toString());
-		if (tree.getChildCount() == 1)
-			log.warn("OneChild tree. " + tree.getText() + CsParser.ruleNames[tree.getRuleIndex()]);
+		//if (tree.getChildCount() == 1)
+		//	log.warn("OneChild tree. " + tree.getText() + CsParser.ruleNames[tree.getRuleIndex()]);
 		
 		switch (tree.getRuleIndex()) {
 		case CsParser.RULE_additive_expression:
@@ -187,6 +181,11 @@ public class Expression implements Opcodes, MethodResident {
 			return new PostfixExpression(this);
 		}
 		case CsParser.RULE_primary_expression: {
+			for (ParserRuleContext child: tree.getRuleContexts(ParserRuleContext.class)) {
+				if (child.getRuleIndex() == CsParser.RULE_arr_arg_suffix) {
+					return new ArrIDExpressionType(CsParser.IDENTIFIER, this);
+				}
+			}
 			if (tree.getChildCount() == 1) {
 				if (tree.getTokens(CsParser.IDENTIFIER).size() > 0) {
 					return expressionTypeByToken.get(CsParser.IDENTIFIER);
@@ -202,7 +201,7 @@ public class Expression implements Opcodes, MethodResident {
 			return new PostfixExpression(this);
 		}
 		case CsParser.RULE_constructor_call: {
-			return new ConstructorExpression(this);
+			return new ConstructorExpression(this, errors);
 		}
 		}	
 
@@ -342,13 +341,21 @@ public class Expression implements Opcodes, MethodResident {
 				expression1 = new Expression(tree.getRuleContext(ParserRuleContext.class, 0), errors, scope, className);
 				expression2 = new Expression(tree.getRuleContext(ParserRuleContext.class, 2), errors, scope, className);
 				
-		        mv.visitVarInsn(ALOAD, 0);        
-				expression2.compile(mv);
-				String varName = expression1.getLValueVariable();
-				if (varName == null)
-					throw new RuntimeException("Null lvalue variable in assign");
-				assignToVariable(mv, varName);
-				expression1.compile(mv);
+				if (expression1.expressionType instanceof ArrIDExpressionType) {
+					ArrIDExpressionType cex = (ArrIDExpressionType)expression1.expressionType;
+					cex.compileGetIndex(mv);
+					expression2.compile(mv);
+					arrAssignToVariable(mv, cex.getVariableName());
+				} else if (expression1.expressionType instanceof IDExpressionType) {
+					mv.visitVarInsn(ALOAD, 0);        
+					expression2.compile(mv);
+					String varName = expression1.getLValueVariable();
+					if (varName == null)
+						throw new RuntimeException("Null lvalue variable in assign");
+					assignToVariable(mv, varName);
+					expression1.compile(mv);	
+				}
+   
 			}
 
 			@Override

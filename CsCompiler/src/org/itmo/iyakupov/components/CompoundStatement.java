@@ -21,8 +21,6 @@ public class CompoundStatement implements Opcodes, MethodResident {
 	protected ErrorProcessor errorProcessor;
 	protected TranslateScope scope;
 	
-	//protected List<Variable> declarations = new ArrayList<Variable>();
-	//protected List<Expression> es = new ArrayList<Expression>();
 	protected List<Object> elements = new ArrayList<Object>();
 	
 	
@@ -75,29 +73,19 @@ public class CompoundStatement implements Opcodes, MethodResident {
 				if (v.getInitExpression() != null) {
 					v.getInitExpression().compile(mv);
 					boolean primType = ExpressionType.isPrimitiveType(v.getInitExpression().getType());
+					primType &= v.getArrDim() == 0;
 					mv.visitVarInsn(primType ? ISTORE : ASTORE, scope.getLocalVariableIndex(v.getName()));
-					log.trace("LocalVar to scope: " + v.getName() + ", index = " + scope.getLocalVariableIndex(v.getName()));
+					log.trace("Add LocalVar to scope. Name = " + v.getName() + 
+							", index = " + scope.getLocalVariableIndex(v.getName()));
 				}
-				//mv.visitVarInsn(ASTORE, paramInt2)
-				//TODO: compile it
-				/*
-				Label startLabel = mv.visitLabel(null);
-				mv.visitLocalVariable(getName(), 
-    			getObjName() != null ? getObjName() : getType().toString().toLowerCase(),
-    			null, paramLabel1, paramLabel2, paramInt);
-				 */
 			} else if (o instanceof Expression) {
-				//FIXME
 				Expression e = (Expression) o;
 				e.compile(mv);
-				//...
 			} else {
 				MethodResident mr = (MethodResident) o;
 				mr.compile(mv);
 			}
 		}
 		// TODO Auto-generated method stub
-		
 	}
-
 }

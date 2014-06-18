@@ -1,8 +1,6 @@
 package org.itmo.iyakupov.components.expr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.components.Variable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 

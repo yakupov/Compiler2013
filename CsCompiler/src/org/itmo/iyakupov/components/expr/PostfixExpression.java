@@ -6,7 +6,6 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.itmo.iyakupov.a4autogen.CsParser;
 import org.objectweb.asm.MethodVisitor;

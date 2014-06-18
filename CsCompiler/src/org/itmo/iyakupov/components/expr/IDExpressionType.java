@@ -7,7 +7,7 @@ import org.itmo.iyakupov.components.Variable;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
-final class IDExpressionType extends ExpressionType {
+class IDExpressionType extends ExpressionType {
 	private final Log log = LogFactory.getLog(getClass());
 
 	private String varName;

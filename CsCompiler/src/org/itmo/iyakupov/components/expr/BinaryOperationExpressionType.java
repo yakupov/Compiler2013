@@ -1,10 +1,6 @@
 package org.itmo.iyakupov.components.expr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.itmo.iyakupov.ErrorProcessor;
-import org.itmo.iyakupov.a4autogen.CsLexer;
-import org.itmo.iyakupov.a4autogen.CsParser;
-import org.itmo.iyakupov.scope.TranslateScope;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
