@@ -1,14 +1,15 @@
 package org.itmo.iyakupov.components.expr;
 
-import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.itmo.iyakupov.CompileException;
-import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.components.Variable;
-import org.itmo.iyakupov.scope.TranslateScope;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 final class IDExpressionType extends ExpressionType {
+	private final Log log = LogFactory.getLog(getClass());
+
 	private String varName;
 	private Variable varDef;
 
@@ -46,16 +47,21 @@ final class IDExpressionType extends ExpressionType {
 
 	@Override
 	public void compile(MethodVisitor mv) {
-		String var = parent.tree.getText();
+		String var = getVariableName();
         Type type;
         //FIXME
+        /*
         if (parent.className != null) {
 	        mv.visitVarInsn(ALOAD, 0);
-			mv.visitFieldInsn(GETFIELD, parent.className, getVariableName(), getType().getDescriptor());
-        } else 
-        if (parent.scope.isLocalVariable(var)) {
+	        //log.trace(var + ' ' + parent.className + ' ' + getType().getDescriptor());
+			mv.visitFieldInsn(GETFIELD, parent.className, var, getType().getDescriptor());
+        } else */if (parent.scope.isLocalVariable(var)) {
             type = parent.scope.getLocalVariableType(var);
             mv.visitVarInsn(ExpressionType.isPrimitiveType(type) ? ILOAD : ALOAD, parent.scope.getLocalVariableIndex(var));
+        } else if (parent.scope.isField(var)) {
+	        mv.visitVarInsn(ALOAD, 0);
+	        log.trace(var + ' ' + parent.scope.getClassName() + ' ' + getType().getDescriptor());
+	        mv.visitFieldInsn(GETFIELD, parent.scope.getClassName(), var, getType().getDescriptor());
         } else {
             throw new CompileException(String.format("Variable %s not found in context %s.", var, parent.tree.getText()));
         }

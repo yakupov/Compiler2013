@@ -10,13 +10,14 @@ import org.itmo.iyakupov.ErrorProcessor;
 import org.itmo.iyakupov.MethodResident;
 import org.itmo.iyakupov.a4autogen.CsParser;
 import org.itmo.iyakupov.components.expr.Expression;
+import org.itmo.iyakupov.components.expr.ExpressionType;
 import org.itmo.iyakupov.scope.TranslateScope;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
-public class CompoundStatement implements MethodResident {
+public class CompoundStatement implements Opcodes, MethodResident {
 	private final Log log = LogFactory.getLog(getClass());
 
-	protected TranslateScope symbolTable;
 	protected ErrorProcessor errorProcessor;
 	protected TranslateScope scope;
 	
@@ -25,8 +26,7 @@ public class CompoundStatement implements MethodResident {
 	protected List<Object> elements = new ArrayList<Object>();
 	
 	
-	public CompoundStatement(ParserRuleContext tree, TranslateScope symbolTable, ErrorProcessor errorProcessor, TranslateScope scope) {
-		this.symbolTable = symbolTable;
+	public CompoundStatement(ParserRuleContext tree, ErrorProcessor errorProcessor, TranslateScope scope) {
 		this.errorProcessor = errorProcessor;
 		this.scope = scope;
 		
@@ -42,7 +42,7 @@ public class CompoundStatement implements MethodResident {
 					} else if (details.getRuleIndex() == CsParser.RULE_init_declarator_list) {
 						for (ParserRuleContext declarator : details.getRuleContexts(ParserRuleContext.class)) {
 							if (declarator.getRuleIndex() == CsParser.RULE_init_declarator) {
-								elements.add(new Variable(declarator, declarationSpecifier, symbolTable, errorProcessor, null));							
+								elements.add(new Variable(declarator, declarationSpecifier, scope, errorProcessor, null));							
 							}
 						}
 					}
@@ -53,9 +53,13 @@ public class CompoundStatement implements MethodResident {
 				if (child.getRuleContext(ParserRuleContext.class, 0).getRuleIndex() == CsParser.RULE_expression_statement) {
 					elements.add(new Expression(child.getRuleContext(ParserRuleContext.class, 0).getRuleContext(ParserRuleContext.class, 0),
 							errorProcessor, 
-							symbolTable, 
+							scope, 
 							null)
 					);
+				} else if (child.getRuleContext(ParserRuleContext.class, 0).getRuleIndex() == CsParser.RULE_jump_statement) {
+					if (child.getRuleContext(ParserRuleContext.class, 0).getTokens(CsParser.RETURN).size() == 1) {
+						elements.add(new ReturnStatement(child.getRuleContext(ParserRuleContext.class, 0), errorProcessor, scope));
+					}
 				}
 			}
 		}
@@ -68,6 +72,12 @@ public class CompoundStatement implements MethodResident {
 			if (o instanceof Variable) {
 				Variable v = (Variable) o;
 				scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
+				if (v.getInitExpression() != null) {
+					v.getInitExpression().compile(mv);
+					boolean primType = ExpressionType.isPrimitiveType(v.getInitExpression().getType());
+					mv.visitVarInsn(primType ? ISTORE : ASTORE, scope.getLocalVariableIndex(v.getName()));
+					log.trace("LocalVar to scope: " + v.getName() + ", index = " + scope.getLocalVariableIndex(v.getName()));
+				}
 				//mv.visitVarInsn(ASTORE, paramInt2)
 				//TODO: compile it
 				/*
@@ -76,11 +86,14 @@ public class CompoundStatement implements MethodResident {
     			getObjName() != null ? getObjName() : getType().toString().toLowerCase(),
     			null, paramLabel1, paramLabel2, paramInt);
 				 */
-			} else {
+			} else if (o instanceof Expression) {
 				//FIXME
 				Expression e = (Expression) o;
 				e.compile(mv);
 				//...
+			} else {
+				MethodResident mr = (MethodResident) o;
+				mr.compile(mv);
 			}
 		}
 		// TODO Auto-generated method stub

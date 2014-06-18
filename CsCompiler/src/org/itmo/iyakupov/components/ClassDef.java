@@ -95,7 +95,7 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
         			null, 
         			null);
         	fv.visitEnd();
-        	scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
+        	scope.addField(v.getName(), v.declarationSpecifier.type);
         }
         
         // default public constructor
@@ -118,7 +118,6 @@ public class ClassDef extends ClassLoader implements Opcodes, CompilationUnit {
         	m.compile(cw, name, fields, this);
         }
              
-		scope.endBlock();
         return cw.toByteArray();
 	}
 }

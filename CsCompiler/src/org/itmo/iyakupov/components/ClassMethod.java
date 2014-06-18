@@ -66,7 +66,7 @@ public class ClassMethod implements Opcodes, ClassResident {
 					}
 				}
 			} else if (child.getRuleIndex() == CsParser.RULE_compound_statement) {
-				block = new CompoundStatement(child, scope, errorProcessor, scope);
+				block = new CompoundStatement(child, errorProcessor, scope);
 			}
 		}
 	}
@@ -80,7 +80,6 @@ public class ClassMethod implements Opcodes, ClassResident {
 		List<Type> argTypes = new ArrayList<Type>();
 		for (Variable v: args) {
 			argTypes.add(v.getType());
-			scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
 		}
 		if (scope.isFunctionDeclared(name, argTypes.toArray(new Type[argTypes.size()]))) {
 			errorProcessor.fail(0, "Trying to redefine method " + name);
@@ -88,7 +87,10 @@ public class ClassMethod implements Opcodes, ClassResident {
 		scope.declareFunction(name, declarationSpecifier.type, argTypes.toArray(new Type[argTypes.size()]));
 		scope.setMethodName(name);
 		scope.newBlock();
-		
+		for (Variable v: args) {
+			scope.addLocalVariable(v.getName(), v.declarationSpecifier.type);
+		}
+			
 		final boolean isConstructor = name.equals(className);
 		final String actualName = isConstructor ? "<init>" : name;
 		String type = null;

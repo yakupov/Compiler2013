@@ -20,6 +20,8 @@ import org.itmo.iyakupov.components.ClassDef;
 import org.itmo.iyakupov.scope.TranslateScope;
 import org.itmo.iyakupov.utils.TreePsGeneratorBicycle;
 
+import static java.lang.String.format;
+
 public class CsCompiler extends ClassLoader {
 	public final static String psFileName = "AST.ps";
 	private final static Log log = LogFactory.getLog(CsCompiler.class);
@@ -62,7 +64,7 @@ public class CsCompiler extends ClassLoader {
 		}
 	}
 
-	public static void testTree(ParserRuleContext tree, int level, Parser p) {
+	public static void testTree(ParserRuleContext tree, int level, Parser p) throws Exception{
 		assert (level == tree.depth());
 		log.info(level + "; " + p.getRuleNames()[tree.getRuleIndex()] + "; " + tree.getText());
 		log.info("\t " + tree.toInfoString(p));
@@ -70,30 +72,28 @@ public class CsCompiler extends ClassLoader {
 		ErrorProcessor ep = new ErrorProcessor();
 		ClassDef cd = new ClassDef(tree, new TranslateScope(), ep);
 		byte[] b = cd.compile();
-        try {
-    		FileOutputStream fos = new FileOutputStream("Out.class");
-    		try {
-    			fos.write(b, 0, b.length);
-    		} finally {
-    			fos.close();
-    		}
-    		Runtime.getRuntime().exec("javap Out -c > Out.bc");
-            Class<?> expClass = new CsCompiler().defineClass("Test", b, 0, b.length);
-
-			System.err.println(expClass.getField("tst").getInt(expClass.newInstance()));    	
-			System.err.println(expClass.getField("xxx").getInt(expClass.newInstance()));
-			System.err.println(expClass.getField("yyy").getInt(expClass.newInstance()));
-			System.err.println(expClass.getField("zzz").getInt(expClass.newInstance()));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		FileOutputStream fos = new FileOutputStream("Out.class");
+		try {
+			fos.write(b, 0, b.length);
+		} finally {
+			fos.close();
 		}
+		Runtime.getRuntime().exec("javap Out -c > Out.bc");
+        Class<?> expClass = new CsCompiler().defineClass("Test", b, 0, b.length);
+
+        String[] intVars = {"tst", "xxx", "yyy", "zzz"};
+        for (String s : intVars) {
+        	log.info(format("%s = %d", s, expClass.getField(s).getInt(expClass.newInstance())));
+        }
+		String mainRes = String.valueOf((Integer)expClass.getMethod("Main", String.class).invoke(expClass.newInstance(), ""));
+		log.info("Main: " + mainRes);
+
 		//System.err.println("\t " + tree.getTokens(CsLexer.CLASS).size());
 		//System.err.println("\t " + tree.getTokens(CsLexer.ACCESS_MODIFIER).size());
 		//System.err.println("\t " + tree.getTokens(CsLexer.IDENTIFIER).size());
 
-		for (ParserRuleContext ct : tree.getRuleContexts(ParserRuleContext.class))
-			testTree(ct, level + 1, p);
+		//for (ParserRuleContext ct : tree.getRuleContexts(ParserRuleContext.class))
+		//	testTree(ct, level + 1, p);
 	}
 
 	

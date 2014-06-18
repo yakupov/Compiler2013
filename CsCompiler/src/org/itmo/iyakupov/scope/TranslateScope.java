@@ -48,7 +48,7 @@ public class TranslateScope implements Scope {
     	}
     	this.className = className;
     	Namespace ns = new Namespace();
-    	localVars.add(ns.local);
+    	//localVars.add(ns.local);
     	classes.put(className, ns);
     	return ns;
     }
@@ -86,39 +86,70 @@ public class TranslateScope implements Scope {
     }
 */
     public void refreshLocalVariables() {
-        getClass(className).local.clear();
+    	localVars.get(localVars.size() - 1).clear();
     }
 
+    private LocalVariableDescriptor getVariable(String name) {
+    	for (int i = localVars.size() - 1; i >= 0; i--) {
+    		if (localVars.get(i).containsKey(name)) {
+    			return localVars.get(i).get(name);
+    		}
+    	}
+    	if (className != null) {
+    		if (classes.get(className).local.containsKey(name))
+    			return classes.get(className).local.get(name);
+    	}
+    	throw new CompileException("No visible variable " + name);
+    }
+    
     public boolean isLocalVariable(String name) {
-        return localVars.get(localVars.size() - 1).containsKey(name);
+    	for (int i = localVars.size() - 1; i >= 0; i--) {
+    		if (localVars.get(i).containsKey(name)) {
+    			return true;
+    		}
+    	}
+        return false;
+    }
+    
+    public boolean isField(String name) {
+    	if (className != null) {
+    		if (classes.get(className).local.containsKey(name))
+    			return true;
+    	}
+    	return false;
     }
 
     public int getLocalVariableIndex(String name) {
-    	for (int i = localVars.size() - 1; i >= 0; i--) {
-    		if (localVars.get(i).containsKey(name)) {
-    			return localVars.get(i).get(name).getIndex();
-    		}
-    	}
-    	throw new CompileException("No visible variable " + name);
-        //return getClass(className).local.get(name).getIndex();
+    	return getVariable(name).getIndex();
     }
 
     public Type getLocalVariableType(String name) {
-    	for (int i = localVars.size() - 1; i >= 0; i--) {
-    		if (localVars.get(i).containsKey(name)) {
-    			return localVars.get(i).get(name).getType();		
-    		}
-    	}
-    	throw new CompileException("No visible variable " + name);
-    	//return getClass(className).local.get(name).getType();
+    	return getVariable(name).getType();
     }
 
     public int addLocalVariable(String name, Type type) {
+    	if (localVars.size() == 0) {
+   			throw new CompileException("No local variable pool when creating: " + name);
+    	}
 		if (localVars.get(localVars.size() - 1).containsKey(name)) {
 			throw new CompileException("Duplicate variable " + name);				
 		}
-    	localVars.get(localVars.size() - 1).put(name, new LocalVariableDescriptor(getClass(className).local.size(), type));
-        return localVars.get(localVars.size() - 1).size() - 1 + calcLocalVarIndexOffset();
+		int index = localVars.get(localVars.size() - 1).size() + calcLocalVarIndexOffset();
+    	localVars.get(localVars.size() - 1).put(name, new LocalVariableDescriptor(index, type));
+        return index;
+    }
+    
+    public int addField(String name, Type type) {
+    	if (className == null) {
+    		throw new CompileException("Null class name when creating a field");
+    	}
+    	Map<String, LocalVariableDescriptor> currLocal = classes.get(className).local;
+    	if (currLocal.containsKey(name)) {
+			throw new CompileException("Duplicate field " + name);				
+		}
+		int index = currLocal.size();
+    	currLocal.put(name, new LocalVariableDescriptor(index, type));
+        return index;
     }
     
     private int calcLocalVarIndexOffset() {
