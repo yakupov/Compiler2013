@@ -1,4 +1,4 @@
-// Generated from C:\Users\Ilia\Desktop\Cs.g4 by ANTLR 4.1
+// Generated from /home/ilia/Compiler2014/Cs.g4 by ANTLR 4.3
 package org.itmo.iyakupov.a4autogen;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -11,6 +11,8 @@ import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class CsParser extends Parser {
+	static { RuntimeMetaData.checkVersion("4.3", RuntimeMetaData.VERSION); }
+
 	protected static final DFA[] _decisionToDFA;
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
@@ -80,6 +82,9 @@ public class CsParser extends Parser {
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
+
+	@Override
+	public String getSerializedATN() { return _serializedATN; }
 
 	@Override
 	public ATN getATN() { return _ATN; }
@@ -1212,7 +1217,7 @@ public class CsParser extends Parser {
 			setState(240);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,19,_ctx);
-			while ( _alt!=2 && _alt!=-1 ) {
+			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					{
 					{
@@ -1672,8 +1677,8 @@ public class CsParser extends Parser {
 	}
 
 	public static class Constructor_callContext extends ParserRuleContext {
-		public Arr_arg_suffixContext arr_arg_suffix() {
-			return getRuleContext(Arr_arg_suffixContext.class,0);
+		public List<Arr_arg_suffixContext> arr_arg_suffix() {
+			return getRuleContexts(Arr_arg_suffixContext.class);
 		}
 		public Type_specifierContext type_specifier() {
 			return getRuleContext(Type_specifierContext.class,0);
@@ -1684,6 +1689,9 @@ public class CsParser extends Parser {
 		}
 		public List<Arg_suffixContext> arg_suffix() {
 			return getRuleContexts(Arg_suffixContext.class);
+		}
+		public Arr_arg_suffixContext arr_arg_suffix(int i) {
+			return getRuleContext(Arr_arg_suffixContext.class,i);
 		}
 		public Constructor_callContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -1739,7 +1747,7 @@ public class CsParser extends Parser {
 				setState(296);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,26,_ctx);
-				while ( _alt!=2 && _alt!=-1 ) {
+				while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
 					if ( _alt==1 ) {
 						{
 						{
@@ -3364,7 +3372,7 @@ public class CsParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\uacf5\uee8c\u4f5d\u8b0d\u4a45\u78bd\u1b2f\u3378\3J\u01db\4\2\t\2\4"+
+		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3J\u01db\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -3399,8 +3407,8 @@ public class CsParser extends Parser {
 		"\3*\3*\3*\3*\3*\3*\5*\u01a9\n*\3+\3+\3+\3+\3+\3+\3+\3+\3+\3+\3+\3+\3+"+
 		"\3+\3+\3+\3+\3+\3+\5+\u01be\n+\3+\3+\3+\5+\u01c3\n+\3,\3,\3,\3,\3,\3,"+
 		"\3,\3,\3,\3,\5,\u01cf\n,\3-\3-\3.\3.\3/\3/\3\60\3\60\3\61\3\61\3\61\2"+
-		"\62\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@B"+
-		"DFHJLNPRTVXZ\\^`\2\n\3\2\22\23\3\2\'(\3\2AF\4\2\25\33\35\36\5\2\'(\64"+
+		"\2\62\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>"+
+		"@BDFHJLNPRTVXZ\\^`\2\n\3\2\22\23\3\2\'(\3\2AF\4\2\25\33\35\36\5\2\'(\64"+
 		"\65??\3\2\37 \3\2!$\3\2%&\u01ee\2c\3\2\2\2\4y\3\2\2\2\6\u0080\3\2\2\2"+
 		"\b\u0082\3\2\2\2\n\u0089\3\2\2\2\f\u0093\3\2\2\2\16\u009b\3\2\2\2\20\u00a1"+
 		"\3\2\2\2\22\u00aa\3\2\2\2\24\u00b3\3\2\2\2\26\u00c2\3\2\2\2\30\u00ca\3"+
@@ -3535,7 +3543,7 @@ public class CsParser extends Parser {
 		"\u0171\u0176\u017c\u0182\u0188\u018f\u0194\u0196\u019f\u01a8\u01bd\u01c2"+
 		"\u01ce";
 	public static final ATN _ATN =
-		ATNSimulator.deserialize(_serializedATN.toCharArray());
+		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
 		_decisionToDFA = new DFA[_ATN.getNumberOfDecisions()];
 		for (int i = 0; i < _ATN.getNumberOfDecisions(); i++) {

@@ -218,7 +218,7 @@ CONTINUE: 'continue';
 BREAK: 'break';
 RETURN: 'return';
 
-PRIMITIVE_TYPE	: 'void' | 'char' | 'short' | 'int' | 'long' | 'float' | 'double';
+PRIMITIVE_TYPE	: 'void' | 'char' | 'short' | 'int' | 'long' | 'float' | 'double' | 'boolean';
 
 PRIMITIVE_TYPE_MODIFIER	: 'unsigned' | 'signed';
     

@@ -14,6 +14,7 @@ import org.itmo.iyakupov.components.expr.ExpressionType;
 import org.itmo.iyakupov.scope.TranslateScope;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 public class CompoundStatement implements Opcodes, MethodResident {
 	private final Log log = LogFactory.getLog(getClass());
@@ -24,7 +25,7 @@ public class CompoundStatement implements Opcodes, MethodResident {
 	protected List<Object> elements = new ArrayList<Object>();
 	
 	
-	public CompoundStatement(ParserRuleContext tree, ErrorProcessor errorProcessor, TranslateScope scope) {
+	public CompoundStatement(ParserRuleContext tree, ErrorProcessor errorProcessor, TranslateScope scope, Type returnType) {
 		this.errorProcessor = errorProcessor;
 		this.scope = scope;
 		
@@ -56,7 +57,7 @@ public class CompoundStatement implements Opcodes, MethodResident {
 					);
 				} else if (child.getRuleContext(ParserRuleContext.class, 0).getRuleIndex() == CsParser.RULE_jump_statement) {
 					if (child.getRuleContext(ParserRuleContext.class, 0).getTokens(CsParser.RETURN).size() == 1) {
-						elements.add(new ReturnStatement(child.getRuleContext(ParserRuleContext.class, 0), errorProcessor, scope));
+						elements.add(new ReturnStatement(child.getRuleContext(ParserRuleContext.class, 0), errorProcessor, scope, returnType));
 					}
 				}
 			}

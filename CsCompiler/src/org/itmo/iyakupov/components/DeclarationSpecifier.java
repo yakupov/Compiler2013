@@ -32,6 +32,8 @@ public class DeclarationSpecifier {
 				if (primType.size() > 0) {
 					errors.assertEquals(primType.size(), 1, child.getStart().getLine(), "invalid primitive type def");
 					type = Type.getType(primType.get(0).getText().toUpperCase());
+					if (primType.get(0).getText().equalsIgnoreCase("BOOLEAN"))
+						type = Type.BOOLEAN_TYPE;
 					objName = null;
 				}
 				

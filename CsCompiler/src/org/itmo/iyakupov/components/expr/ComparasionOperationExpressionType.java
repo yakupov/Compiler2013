@@ -1,7 +1,9 @@
 package org.itmo.iyakupov.components.expr;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 public abstract class ComparasionOperationExpressionType extends BinaryOperationExpressionType {
     public ComparasionOperationExpressionType(int lexemType, Expression parent) {
@@ -10,6 +12,8 @@ public abstract class ComparasionOperationExpressionType extends BinaryOperation
 
     @Override
     public void compile(MethodVisitor mv) {
+    	expression1 = new Expression(parent.tree.getRuleContext(ParserRuleContext.class, 0), parent.errors, parent.scope, parent.className);
+        expression2 = new Expression(parent.tree.getRuleContext(ParserRuleContext.class, 2), parent.errors, parent.scope, parent.className);
         // compiles e1, e2, and adds the instructions to compare the two values
     	expression1.compile(mv);
     	expression2.compile(mv);   	
@@ -25,4 +29,9 @@ public abstract class ComparasionOperationExpressionType extends BinaryOperation
         mv.visitLabel(end);
     }
 
+    @Override
+    public Type getType() {
+        return Type.BOOLEAN_TYPE;
+    	//return Type.getType("BOOLEAN");
+    }
 }

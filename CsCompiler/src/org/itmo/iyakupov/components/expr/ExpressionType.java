@@ -1,5 +1,8 @@
 package org.itmo.iyakupov.components.expr;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.itmo.iyakupov.CompileException;
 import org.itmo.iyakupov.MethodResident;
 import org.itmo.iyakupov.a4autogen.CsLexer;
 import org.objectweb.asm.Opcodes;
@@ -35,5 +38,22 @@ public abstract class ExpressionType implements Opcodes, MethodResident {
 	
 	public static boolean isPrimitiveType(Type type) {
 		return type.getSort() < 10;
+	}
+	
+	public static void typeCheck(Expression expression1, Expression expression2) {
+		/*
+		Log log = LogFactory.getLog(ExpressionType.class);
+		log.trace(expression1.getExpressionType().getClass().getName());
+		log.trace(expression1.getExpressionType().getType());
+		log.trace(expression2.getExpressionType().getClass().getName());
+		log.trace(expression2.getExpressionType().getType());
+		*/
+		typeCheck(expression1.getType(), expression2.getType());
+	}
+	
+	public static void typeCheck(Type t1, Type t2) {
+		if (t1 != t2) {
+        	throw new CompileException(String.format("Type mismatch: %s %s", t1, t2));
+        }
 	}
 }

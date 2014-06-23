@@ -66,7 +66,7 @@ public class ClassMethod implements Opcodes, ClassResident {
 					}
 				}
 			} else if (child.getRuleIndex() == CsParser.RULE_compound_statement) {
-				block = new CompoundStatement(child, errorProcessor, scope);
+				block = new CompoundStatement(child, errorProcessor, scope, declarationSpecifier.type);
 			}
 		}
 	}

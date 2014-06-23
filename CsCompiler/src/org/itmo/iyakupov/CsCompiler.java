@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -27,6 +28,11 @@ public class CsCompiler extends ClassLoader {
 	private final static Log log = LogFactory.getLog(CsCompiler.class);
 	
 	public static void main(String[] args) {
+		//String[] arg0 = {"-visitor", "/home/ilia/Compiler2014/Cs.g4", "-package", "org.itmo.iyakupov.a4autogen"};
+		//org.antlr.v4.Tool.main(arg0);
+		//if (true) return;
+		
+		
 		args = new String[]{"Test.cs"};
 
 		assert(args.length > 0 && args[0] != null);
@@ -82,10 +88,15 @@ public class CsCompiler extends ClassLoader {
         Class<?> expClass = new CsCompiler().defineClass("Test", b, 0, b.length);
 
         String[] intVars = {"tst", "xxx", "yyy", "zzz"};
-        for (String s : intVars) {
-        	//log.info(format("%s = %d", s, expClass.getField(s).getInt(expClass.newInstance())));
+        for (Field f : expClass.getDeclaredFields()) {
+        	log.info(format("%s = %d", f.getName(), expClass.getField(f.getName()).getInt(expClass.newInstance())));
         }
-		String mainRes = String.valueOf((Integer)expClass.getMethod("Main", String.class).invoke(expClass.newInstance(), ""));
+        /*
+        for (String s : intVars) {
+        	log.info(format("%s = %d", s, expClass.getField(s).getInt(expClass.newInstance())));
+        }
+        */
+		String mainRes = String.valueOf((Boolean)expClass.getMethod("Main", String.class).invoke(expClass.newInstance(), ""));
 		log.info("Main: " + mainRes);
 
 		//System.err.println("\t " + tree.getTokens(CsLexer.CLASS).size());

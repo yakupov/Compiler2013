@@ -25,9 +25,12 @@ public abstract class LValueAssignExpressionType extends ExpressionType {
         parent.errors.assertEquals(3, parent.tree.getChildCount(), parent.tree.getStart().getLine(), "LValueAssign");
         expression1 = new Expression(parent.tree.getRuleContext(ParserRuleContext.class, 0), parent.errors, parent.scope, parent.className);
         expression2 = new Expression(parent.tree.getRuleContext(ParserRuleContext.class, 2), parent.errors, parent.scope, parent.className);
-
+        
     	expression1.compile(mv);
     	expression2.compile(mv);
+    	
+        typeCheck(expression1, expression2);
+    	
     	mv.visitInsn(opCode());
     	mv.visitInsn(DUP);
         String varName = expression1.getLValueVariable();

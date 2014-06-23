@@ -193,6 +193,9 @@ public class Expression implements Opcodes, MethodResident {
 					return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));    				
 				}
 			}
+			if (tree.getTokens(CsParser.OPB_RND).size() > 0) {
+				return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 0));
+			}
 			return determineExpressionType(tree.getRuleContext(ParserRuleContext.class, 1));
 		}
 		case CsParser.RULE_constant: {

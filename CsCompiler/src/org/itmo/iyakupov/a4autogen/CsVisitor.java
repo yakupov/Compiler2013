@@ -1,4 +1,4 @@
-// Generated from C:\Users\Ilia\Desktop\Cs.g4 by ANTLR 4.1
+// Generated from /home/ilia/Compiler2014/Cs.g4 by ANTLR 4.3
 package org.itmo.iyakupov.a4autogen;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;

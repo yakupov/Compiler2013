@@ -63,7 +63,7 @@ class IDExpressionType extends ExpressionType {
 	        log.trace(var + ' ' + parent.scope.getClassName() + ' ' + getType().getDescriptor());
 	        mv.visitFieldInsn(GETFIELD, parent.scope.getClassName(), var, getType().getDescriptor());
         } else {
-            throw new CompileException(String.format("Variable %s not found in context %s.", var, parent.tree.getText()));
+            throw new CompileException(String.format("Variable %s not found in context", var));
         }
 		
 	}
